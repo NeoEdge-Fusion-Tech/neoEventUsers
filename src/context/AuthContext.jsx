@@ -1,39 +1,57 @@
+// src/context/AuthContext.jsx
 import { createContext, useState, useEffect } from 'react';
 import API from '../api/axios';
 
 export const AuthContext = createContext({});
-// src/context/AuthContext.jsx
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Persistence: Check for user on refresh
+  // Check if user is authenticated on app load
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data } = await API.post('refresh/');
+        const { data } = await API.post('account/refresh/');
         setUser(data.user);
-        sessionStorage.setItem('access_token', data.access);
+        // Optionally store access token
+        if (data.access) {
+          sessionStorage.setItem('access_token', data.access);
+        }
       } catch (err) {
+        // Expected behavior on first visit or when token expired
+        console.log("No active session");
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
+
     checkAuth();
   }, []);
 
   const login = async (credentials) => {
-    const { data } = await API.post('login/', credentials);
-    setUser(data.user);
-    sessionStorage.setItem('access_token', data.access);
+    try {
+      const { data } = await API.post('account/login/', credentials);
+      setUser(data.user);
+      if (data.access) {
+        sessionStorage.setItem('access_token', data.access);
+      }
+      return data;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const logout = async () => {
-    await API.post('logout/');
-    setUser(null);
-    sessionStorage.removeItem('access_token');
+    try {
+      await API.post('account/logout/');
+    } catch (err) {
+      console.log("Logout error", err);
+    } finally {
+      setUser(null);
+      sessionStorage.removeItem('access_token');
+    }
   };
 
   return (
@@ -42,97 +60,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-
-
-// import {createContext, useContext, useEffect, useState,} from "react";
-
-// import {
-//   login as loginRequest,
-//   logout as logoutRequest,
-//   refreshAccessToken,
-// } from "../api/auth";
-
-
-// const AuthContext = createContext();
-
-
-// export const AuthProvider = ({ children }) => {
-//   const [user, setUser] = useState(null);
-
-//   const [accessToken, setAccessToken] = useState(null);
-
-//   const [loading, setLoading] = useState(true);
-
-
-//   const login = async (username, password) => {
-//     const data = await loginRequest(username, password);
-
-//     setAccessToken(data.access);
-
-//     setUser(data.user);
-
-//     return data;
-//   };
-
-
-//   const logout = async () => {
-//     try {
-//       await logoutRequest();
-//     } catch (error) {
-//       console.error(error);
-//     }
-
-//     setUser(null);
-
-//     setAccessToken(null);
-//   };
-
-
-//   const refreshToken = async () => {
-//     try {
-//       const newAccessToken = await refreshAccessToken();
-
-//       setAccessToken(newAccessToken);
-
-//       return newAccessToken;
-//     } catch (error) {
-//       logout();
-
-//       return null;
-//     }
-//   };
-
-
-//   useEffect(() => {
-//     const initializeAuth = async () => {
-//       try {
-//         await refreshToken();
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     initializeAuth();
-//   }, []);
-
-
-//   return (
-//     <AuthContext.Provider
-//       value={{
-//         user,
-//         accessToken,
-//         login,
-//         logout,
-//         refreshToken,
-//         loading,
-//         setUser,
-//       }}
-//     >
-//       {children}
-//     </AuthContext.Provider>
-//   );
-// };
-
-
-// export const useAuth = () => useContext(AuthContext);

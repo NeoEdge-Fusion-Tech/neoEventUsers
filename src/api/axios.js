@@ -1,11 +1,13 @@
+// src/api/axios.js
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/',
-  withCredentials: true, // CRITICAL: Sends HttpOnly cookies (refresh token)
+  baseURL: import.meta.env.VITE_NEO_URL,   // Should be: http://localhost:8000/api/
+  withCredentials: true,                   // CRITICAL for cookies (refresh token)
+  timeout: 15000,
 });
 
-// Request Interceptor: Attach Access Token to every request
+// Request Interceptor - Attach Access Token
 API.interceptors.request.use((config) => {
   const token = sessionStorage.getItem('access_token');
   if (token) {
@@ -14,34 +16,38 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// Response Interceptor: Handle Token Expiration
+// Response Interceptor - Handle Token Expiration
 API.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // If 401 and we haven't tried refreshing yet
+    // Only attempt refresh on 401 and if we haven't already tried
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
       try {
-        // Hit your RefreshTokenView
-        const { data } = await axios.post(
-          `${API.defaults.baseURL}refresh/`,
-          {},
-          { withCredentials: true }
-        );
-        
+        // Use the same API instance for refresh (consistent headers + cookies)
+        const { data } = await API.post('account/refresh/');
+
+        // Save new access token
         sessionStorage.setItem('access_token', data.access);
-        return API(originalRequest); // Retry the original failed request
+
+        // Retry original request
+        return API(originalRequest);
       } catch (refreshError) {
-        // If refresh fails, user must log in again
-        window.dispatchEvent(new Event('logout'));
+        console.error("Refresh token failed");
+        sessionStorage.removeItem('access_token');
+        
+        // Optional: Notify app to logout
+        window.dispatchEvent(new Event('forceLogout'));
+        
         return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(error);
   }
 );
 
 export default API;
-

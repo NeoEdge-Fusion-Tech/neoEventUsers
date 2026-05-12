@@ -7,7 +7,7 @@ import {
 } from 'react-router-dom';
 
 import { AuthProvider } from './context/AuthContext';
-import ThemeProvider from './context/ThemeContext';
+import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 
@@ -27,12 +27,9 @@ function App() {
       <AuthProvider>
         <div className="app-container">
           <Navbar />
-
           <main>
             <Routes>
-
               {/* Public Routes */}
-
               <Route
                 path="/"
                 element={<Home />}
