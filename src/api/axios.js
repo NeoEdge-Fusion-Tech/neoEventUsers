@@ -23,7 +23,12 @@ API.interceptors.response.use(
     const originalRequest = error.config;
 
     // Prevent infinite loop if refresh token request itself fails with 401
-    if (originalRequest.url && originalRequest.url.includes('account/refresh/')) {
+    // or if the user is explicitly trying to log in.
+    if (
+      originalRequest.url &&
+      (originalRequest.url.includes('account/refresh/') ||
+        originalRequest.url.includes('account/login/'))
+    ) {
       return Promise.reject(error);
     }
 

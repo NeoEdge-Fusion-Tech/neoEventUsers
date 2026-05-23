@@ -32,7 +32,8 @@ const Registration = () => {
   
   // Form states
   const [formData, setFormData] = useState({
-    full_name: '',
+    first_name: '',
+    last_name: '',
     email: '',
     phone_number: ''
   });
@@ -40,7 +41,7 @@ const Registration = () => {
   // Group states
   const [groupName, setGroupName] = useState('');
   const [groupMembers, setGroupMembers] = useState([
-    { full_name: '', email: '', phone_number: '' }
+    { first_name: '', last_name: '', email: '', phone_number: '' }
   ]);
 
   const [referenceImage, setReferenceImage] = useState(null);
@@ -79,7 +80,7 @@ const Registration = () => {
   }, [eventId]);
 
   const handleAddMember = () => {
-    setGroupMembers([...groupMembers, { full_name: '', email: '', phone_number: '' }]);
+    setGroupMembers([...groupMembers, { first_name: '', last_name: '', email: '', phone_number: '' }]);
   };
 
   const handleRemoveMember = (idx) => {
@@ -110,11 +111,17 @@ const Registration = () => {
 
     if (purchaseType === 'group') {
       form.append('group_name', groupName);
-      form.append('attendees', JSON.stringify(groupMembers));
+      
+      const mappedMembers = groupMembers.map(m => ({
+        full_name: `${m.first_name} ${m.last_name}`.trim(),
+        email: m.email,
+        phone_number: m.phone_number
+      }));
+      form.append('attendees', JSON.stringify(mappedMembers));
     } else {
-      form.append('full_name', formData.full_name);
+      form.append('full_name', `${formData.first_name} ${formData.last_name}`.trim());
       form.append('email', formData.email);
-      form.append('phone_number', formData.phone_number || '');
+      form.append('phone_number', formData.phone_number);
       if (referenceImage) {
         form.append('reference_image', referenceImage);
       }
@@ -298,18 +305,35 @@ const Registration = () => {
           {purchaseType === 'individual' ? (
             <>
               {/* Individual Form */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                <label style={styles.label}>Full Name</label>
-                <div className="glass" style={styles.inputWrapper}>
-                  <User size={20} color="var(--primary)" />
-                  <input 
-                    type="text" 
-                    required
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                    placeholder="Enter full name" 
-                    style={styles.input} 
-                  />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                  <label style={styles.label}>First Name</label>
+                  <div className="glass" style={styles.inputWrapper}>
+                    <User size={20} color="var(--primary)" />
+                    <input 
+                      type="text" 
+                      required
+                      value={formData.first_name}
+                      onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                      placeholder="First Name" 
+                      style={styles.input} 
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                  <label style={styles.label}>Last Name</label>
+                  <div className="glass" style={styles.inputWrapper}>
+                    <User size={20} color="var(--primary)" />
+                    <input 
+                      type="text" 
+                      required
+                      value={formData.last_name}
+                      onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                      placeholder="Last Name" 
+                      style={styles.input} 
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -324,6 +348,20 @@ const Registration = () => {
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                     placeholder="Enter email address" 
                     style={styles.input} 
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <label style={styles.label}>Phone Number</label>
+                <div className="glass" style={styles.inputWrapper}>
+                  <input 
+                    type="tel" 
+                    required
+                    value={formData.phone_number}
+                    onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
+                    placeholder="Enter phone number" 
+                    style={{...styles.input, paddingLeft: '1.2rem'}} 
                   />
                 </div>
               </div>
@@ -349,7 +387,7 @@ const Registration = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label style={styles.label}>Members Registry</label>
-                  <button type="button" onClick={handleAddMember} className="glass" style={{ ...styles.actionBtn, padding: '6px 12px', fontSize: '0.8rem' }}>+ Member</button>
+                  <button type="button" onClick={handleAddMember} className="glass" style={{ ...styles.actionBtn, padding: '6px 12px', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 800 }}>+ Member</button>
                 </div>
 
                 {groupMembers.map((m, idx) => (
@@ -364,9 +402,16 @@ const Registration = () => {
                     </div>
                     <div style={styles.grid2}>
                       <input 
-                        placeholder="Full Name" 
-                        value={m.full_name} 
-                        onChange={e => handleMemberChange(idx, 'full_name', e.target.value)} 
+                        placeholder="First Name" 
+                        value={m.first_name} 
+                        onChange={e => handleMemberChange(idx, 'first_name', e.target.value)} 
+                        required 
+                        style={styles.inputPlain} 
+                      />
+                      <input 
+                        placeholder="Last Name" 
+                        value={m.last_name} 
+                        onChange={e => handleMemberChange(idx, 'last_name', e.target.value)} 
                         required 
                         style={styles.inputPlain} 
                       />
@@ -375,6 +420,14 @@ const Registration = () => {
                         placeholder="Email Address" 
                         value={m.email} 
                         onChange={e => handleMemberChange(idx, 'email', e.target.value)} 
+                        required 
+                        style={styles.inputPlain} 
+                      />
+                      <input 
+                        type="tel"
+                        placeholder="Phone Number" 
+                        value={m.phone_number} 
+                        onChange={e => handleMemberChange(idx, 'phone_number', e.target.value)} 
                         required 
                         style={styles.inputPlain} 
                       />

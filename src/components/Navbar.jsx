@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  Search, Calendar, Ticket, User, LogOut, 
+import {
+  Search, Calendar, Ticket, User, LogOut,
   Disc, Sun, Moon, Camera, Image as ImageIcon,
   Briefcase // Added for generic Vendor icon
 } from 'lucide-react';
@@ -16,12 +16,12 @@ const Navbar = () => {
   const NavItem = ({ to, label, icon: Icon }) => {
     const isActive = location.pathname === to;
     return (
-      <Link to={to} style={{ 
-        color: isActive ? 'var(--primary)' : 'var(--on-surface-variant)', 
-        textDecoration: 'none', 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '0.6rem', 
+      <Link to={to} style={{
+        color: isActive ? 'var(--primary)' : 'var(--on-surface-variant)',
+        textDecoration: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.6rem',
         fontWeight: 700,
         fontSize: '0.9rem',
         padding: '0.5rem 1rem',
@@ -46,13 +46,13 @@ const Navbar = () => {
       height: '90px'
     }}>
       <div className="logo" style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
-        <Disc size={32} strokeWidth={3} style={{ color: 'var(--primary)' }} /> 
+        <Disc size={32} strokeWidth={3} style={{ color: 'var(--primary)' }} />
         <span style={{ letterSpacing: '-1px' }}>NEOEVENT</span>
       </div>
-      
+
       <div className="nav-links" style={{ display: 'flex', gap: '1.2rem', background: 'rgba(0, 0, 0, 0.02)', padding: '0.6rem', borderRadius: '20px' }}>
         <NavItem to="/" label="Explore" icon={Search} />
-        
+
         {/* Attendee Links */}
         {user && user.role === 'ATTENDEE' && (
           <>
@@ -79,15 +79,15 @@ const Navbar = () => {
       </div>
 
       <div className="nav-profile" style={{ display: 'flex', alignItems: 'center', gap: '1.8rem' }}>
-        <button 
+        <button
           onClick={toggleTheme}
-          style={{ 
-            width: '44px', 
-            height: '44px', 
-            borderRadius: '14px', 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
+          style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '14px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
             color: 'var(--primary)',
             background: 'rgba(255, 177, 115, 0.1)',
             border: '1px solid rgba(255, 177, 115, 0.2)',
@@ -100,10 +100,10 @@ const Navbar = () => {
         {user ? (
           <>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'black' }}>{user.username}</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--on-surface)' }}>{user.username}</div>
               <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase' }}>{user.role}</div>
             </div>
-            
+
             <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#eee', display: 'flex', justifyContent: 'center', alignItems: 'center', border: '2px solid var(--primary)', overflow: 'hidden' }}>
               {user.profile_image ? (
                 <img src={user.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -119,27 +119,27 @@ const Navbar = () => {
         ) : (
 
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <Link to="/login" style={{ 
-              textDecoration: 'none', 
-              color: 'black', 
-              fontWeight: 700, 
-              fontSize: '0.9rem' 
+            <Link to="/login" style={{
+              textDecoration: 'none',
+              color: 'var(--on-surface)',
+              fontWeight: 700,
+              fontSize: '0.9rem'
             }}>
               LOGIN
             </Link>
 
             {/* Point this to the selection page we just created */}
-            <Link to="/signup" style={{ 
-                textDecoration: 'none', 
-                padding: '0.8rem 1.5rem', 
-                borderRadius: '12px', 
-                background: 'black', 
-                color: 'white', 
-                fontSize: '0.85rem', 
-                fontWeight: 700,
-                transition: 'transform 0.2s'
+            <Link to="/signup" style={{
+              textDecoration: 'none',
+              padding: '0.8rem 1.5rem',
+              borderRadius: '12px',
+              background: 'var(--on-surface)',
+              color: 'var(--bg-color)',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              transition: 'transform 0.2s'
             }}
-            className="hover-scale"
+              className="hover-scale"
             >
               JOIN NEO
             </Link>

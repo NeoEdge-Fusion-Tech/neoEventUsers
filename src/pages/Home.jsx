@@ -7,6 +7,14 @@ import { Link } from 'react-router-dom';
 const Home = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('ALL');
+
+  const getRegistrationStatus = (event) => {
+    const now = new Date();
+    if (event.registration_start && new Date(event.registration_start) > now) return 'Yet to Start';
+    if (event.registration_deadline && new Date(event.registration_deadline) < now) return 'Past';
+    return 'In Progress';
+  };
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -88,43 +96,69 @@ const Home = () => {
             <Loader2 className="animate-spin" size={64} color="var(--primary)" />
           </div>
         ) : (
-          <div className="event-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '4rem' }}>
-            {events.map(event => (
-              <Link to={`/register/${event.id}`} key={event.id} className="event-card glass hover-card" style={{ borderRadius: '40px', overflow: 'hidden', textDecoration: 'none', color: 'inherit' }}>
-                <div style={{ height: '320px', background: 'var(--surface-highest)', position: 'relative' }}>
-                  <img src={event.banner_image || '/placeholder.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', display: 'flex', gap: '0.7rem' }}>
-                    {event.is_currently_holding && (
-                      <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900, color: 'var(--primary)', border: '1px solid var(--primary)', background: 'var(--glass-bg)' }}>
-                        LIVE
+          <>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '3rem', flexWrap: 'wrap' }}>
+              <button onClick={() => setStatusFilter('ALL')} className={statusFilter === 'ALL' ? 'btn-primary' : 'glass'} style={{ padding: '0.8rem 1.5rem', borderRadius: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: statusFilter === 'ALL' ? 'var(--primary)' : 'rgba(255,255,255,0.05)', color: statusFilter === 'ALL' ? 'var(--on-primary)' : 'var(--on-surface)' }}>All Events</button>
+              <button onClick={() => setStatusFilter('YET_TO_START')} className={statusFilter === 'YET_TO_START' ? 'btn-primary' : 'glass'} style={{ padding: '0.8rem 1.5rem', borderRadius: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: statusFilter === 'YET_TO_START' ? 'var(--primary)' : 'rgba(255,255,255,0.05)', color: statusFilter === 'YET_TO_START' ? 'var(--on-primary)' : 'var(--on-surface)' }}>Yet to Start</button>
+              <button onClick={() => setStatusFilter('IN_PROGRESS')} className={statusFilter === 'IN_PROGRESS' ? 'btn-primary' : 'glass'} style={{ padding: '0.8rem 1.5rem', borderRadius: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: statusFilter === 'IN_PROGRESS' ? 'var(--primary)' : 'rgba(255,255,255,0.05)', color: statusFilter === 'IN_PROGRESS' ? 'var(--on-primary)' : 'var(--on-surface)' }}>In Progress</button>
+              <button onClick={() => setStatusFilter('PAST')} className={statusFilter === 'PAST' ? 'btn-primary' : 'glass'} style={{ padding: '0.8rem 1.5rem', borderRadius: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: statusFilter === 'PAST' ? 'var(--primary)' : 'rgba(255,255,255,0.05)', color: statusFilter === 'PAST' ? 'var(--on-primary)' : 'var(--on-surface)' }}>Past</button>
+            </div>
+            
+            <div className="event-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '4rem' }}>
+              {events
+                .filter(e => statusFilter === 'ALL' || getRegistrationStatus(e).toUpperCase().replace(/ /g, '_') === statusFilter)
+                .map(event => {
+                  const regStatus = getRegistrationStatus(event);
+                  const isClickable = regStatus === 'In Progress';
+
+                  const cardContent = (
+                    <>
+                      <div style={{ height: '320px', background: 'var(--surface-highest)', position: 'relative' }}>
+                        <img src={event.banner_image || '/placeholder.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', display: 'flex', gap: '0.7rem' }}>
+                          {event.is_currently_holding && (
+                            <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900, color: 'var(--primary)', border: '1px solid var(--primary)', background: 'var(--glass-bg)' }}>
+                              LIVE
+                            </div>
+                          )}
+                          <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900, color: 'var(--on-surface)' }}>
+                            {event.is_paid ? 'PREMIUM' : 'OPEN ACCESS'}
+                          </div>
+                        </div>
                       </div>
-                    )}
-                    <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900, color: 'var(--on-surface)' }}>
-                      {event.is_paid ? 'PREMIUM' : 'OPEN ACCESS'}
+                      <div style={{ padding: '3rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                          <Play size={16} fill="var(--primary)" color="var(--primary)" />
+                          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '2px' }}>{regStatus}</span>
+                        </div>
+                        <h3 style={{ fontSize: '2.2rem', marginBottom: '1.5rem', fontWeight: 900, lineHeight: '1.2', letterSpacing: '-0.5px' }}>{event.title}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', color: 'var(--on-surface-variant)', fontSize: '1rem', marginBottom: '3rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><Calendar size={20} color="var(--primary)" /> {formatDateRange(event.start_date, event.end_date)}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><MapPin size={20} color="var(--primary)" /> {event.venue_name || event.location || 'Online / TBA'}</div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '2.5rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Starting At</span>
+                            <span style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--on-surface)' }}>{event.is_paid ? `$${event.price}` : 'VIP'}</span>
+                          </div>
+                          <button className="btn-primary" style={{ padding: '1.2rem 2.5rem', borderRadius: '18px', fontWeight: 800, fontSize: '0.95rem', opacity: isClickable ? 1 : 0.5 }}>{isClickable ? 'OBTAIN ACCESS' : 'UNAVAILABLE'}</button>
+                        </div>
+                      </div>
+                    </>
+                  );
+
+                  return isClickable ? (
+                    <Link to={`/register/${event.id}`} key={event.id} className="event-card glass hover-card" style={{ borderRadius: '40px', overflow: 'hidden', textDecoration: 'none', color: 'inherit' }}>
+                      {cardContent}
+                    </Link>
+                  ) : (
+                    <div key={event.id} className="event-card glass" style={{ borderRadius: '40px', overflow: 'hidden', color: 'inherit', opacity: 0.8, cursor: 'not-allowed' }}>
+                      {cardContent}
                     </div>
-                  </div>
-                </div>
-                <div style={{ padding: '3rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                    <Play size={16} fill="var(--primary)" color="var(--primary)" />
-                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '2px' }}>{event.status}</span>
-                  </div>
-                  <h3 style={{ fontSize: '2.2rem', marginBottom: '1.5rem', fontWeight: 900, lineHeight: '1.2', letterSpacing: '-0.5px' }}>{event.title}</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', color: 'var(--on-surface-variant)', fontSize: '1rem', marginBottom: '3rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><Calendar size={20} color="var(--primary)" /> {formatDateRange(event.start_date, event.end_date)}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><MapPin size={20} color="var(--primary)" /> {event.location}</div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '2.5rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Starting At</span>
-                      <span style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--on-surface)' }}>{event.is_paid ? `$${event.price}` : 'VIP'}</span>
-                    </div>
-                    <button className="btn-primary" style={{ padding: '1.2rem 2.5rem', borderRadius: '18px', fontWeight: 800, fontSize: '0.95rem' }}>OBTAIN ACCESS</button>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                  );
+                })}
+            </div>
+          </>
         )}
       </section>
     </div>

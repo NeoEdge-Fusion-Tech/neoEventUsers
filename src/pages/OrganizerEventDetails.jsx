@@ -32,8 +32,9 @@ const OrganizerEventDetails = () => {
   const [inviting, setInviting] = useState(false);
   const [invitationError, setInvitationError] = useState('');
 
-  // Search registrations
+  // Search and Filter registrations
   const [searchQuery, setSearchQuery] = useState('');
+  const [checkInFilter, setCheckInFilter] = useState('ALL');
 
   // Edit event state
   const [editForm, setEditForm] = useState(null);
@@ -57,6 +58,7 @@ const OrganizerEventDetails = () => {
       state_or_county: ev.state_or_county || '',
       start_date: ev.start_date ? ev.start_date.slice(0,16) : '',
       end_date: ev.end_date ? ev.end_date.slice(0,16) : '',
+      registration_start: ev.registration_start ? ev.registration_start.slice(0,16) : '',
       registration_deadline: ev.registration_deadline ? ev.registration_deadline.slice(0,16) : '',
       max_participants: ev.max_participants || 100,
       currency: ev.currency || 'USD',
@@ -156,6 +158,9 @@ const OrganizerEventDetails = () => {
   };
 
   const filteredRegistrations = registrations.filter(r => {
+    if (checkInFilter === 'CHECKED_IN' && !r.checked_in) return false;
+    if (checkInFilter === 'NOT_CHECKED_IN' && r.checked_in) return false;
+
     const query = searchQuery.toLowerCase();
     const name = (r.attendee_name_display || '').toLowerCase();
     const email = (r.attendee_email_display || '').toLowerCase();
@@ -164,9 +169,28 @@ const OrganizerEventDetails = () => {
     return name.includes(query) || email.includes(query) || ticket.includes(query) || group.includes(query);
   });
 
-  // Stats calculation
   const totalRevenue = registrations.reduce((sum, r) => sum + parseFloat(r.ticket_type_price || 0), 0);
+  const registeredCount = registrations.length;
   const checkedInCount = registrations.filter(r => r.checked_in).length;
+  const notCheckedInCount = registeredCount - checkedInCount;
+
+  const handleExport = async (type) => {
+    try {
+      const response = await api.get(`/events/${eventId}/export/?type=${type}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `event_${eventId}_${type}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (err) {
+      console.error('Export failed', err);
+      alert('Failed to export data.');
+    }
+  };
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '10rem' }}><Loader2 className="animate-spin" size={48} color="var(--primary)" /></div>;
   if (!event) return <div style={{ textAlign: 'center', padding: '10rem' }}>Event not found.</div>;
@@ -189,15 +213,15 @@ const OrganizerEventDetails = () => {
       </header>
 
       {/* High tech stats block */}
-      <div style={styles.statsRow}>
+      <div style={{ ...styles.statsRow, gridTemplateColumns: '1fr 1fr 1fr 1fr' }}>
         <div className="glass" style={styles.statCard}>
           <div style={styles.statHeader}>
             <Ticket size={24} color="var(--primary)" />
-            <span>Tickets Sold</span>
+            <span>Registered</span>
           </div>
-          <div style={styles.statVal}>{event.registered_count || 0} / {event.max_participants || 100}</div>
+          <div style={styles.statVal}>{registeredCount}</div>
           <div style={styles.statBarBg}>
-            <div style={{ ...styles.statBarFill, width: `${Math.min(((event.registered_count || 0) / (event.max_participants || 100)) * 100, 100)}%` }}></div>
+            <div style={{ ...styles.statBarFill, width: `${Math.min((registeredCount / (event.max_participants || 100)) * 100, 100)}%` }}></div>
           </div>
         </div>
 
@@ -208,17 +232,28 @@ const OrganizerEventDetails = () => {
           </div>
           <div style={styles.statVal}>{checkedInCount}</div>
           <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 600 }}>
-            {event.registered_count ? `${Math.round((checkedInCount / event.registered_count) * 100)}% of total arrivals` : 'No participants registered'}
+            {registeredCount ? `${Math.round((checkedInCount / registeredCount) * 100)}%` : '0%'}
+          </p>
+        </div>
+
+        <div className="glass" style={styles.statCard}>
+          <div style={styles.statHeader}>
+            <Clock size={24} color="var(--primary)" />
+            <span>Not Checked In</span>
+          </div>
+          <div style={styles.statVal}>{notCheckedInCount}</div>
+          <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 600 }}>
+            {registeredCount ? `${Math.round((notCheckedInCount / registeredCount) * 100)}%` : '0%'}
           </p>
         </div>
 
         <div className="glass" style={styles.statCard}>
           <div style={styles.statHeader}>
             <DollarSign size={24} color="var(--primary)" />
-            <span>Revenue Generated</span>
+            <span>Revenue</span>
           </div>
           <div style={styles.statVal}>{getCurrencySymbol(event?.currency)}{totalRevenue.toFixed(2)}</div>
-          <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 600 }}>Gross sales from registrations</p>
+          <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 600 }}>Gross sales</p>
         </div>
       </div>
 
@@ -247,17 +282,36 @@ const OrganizerEventDetails = () => {
         <div>
           {activeTab === 'participants' && (
             <div className="glass" style={{ padding: '3rem', borderRadius: '32px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-                <h2 style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.5px' }}>Registered Attendees</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <h2 style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.5px' }}>Registered Attendees</h2>
+                  <button onClick={() => handleExport('registrations')} className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800, border: '1px solid var(--primary)', color: 'var(--primary)', cursor: 'pointer' }}>
+                    CSV: REGISTRATIONS
+                  </button>
+                  <button onClick={() => handleExport('daily_checkins')} className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800, border: '1px solid var(--primary)', color: 'var(--primary)', cursor: 'pointer' }}>
+                    CSV: DAILY LOGS
+                  </button>
+                </div>
                 
-                <div className="glass" style={styles.searchWrapper}>
-                  <Search size={18} color="var(--primary)" />
-                  <input 
-                    placeholder="Search name, email, group..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    style={styles.searchInput}
-                  />
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <select 
+                    value={checkInFilter} 
+                    onChange={e => setCheckInFilter(e.target.value)}
+                    style={{ ...styles.searchInput, border: '1px solid var(--glass-border)', borderRadius: '12px', background: 'var(--surface-highest)' }}
+                  >
+                    <option value="ALL">All Registered</option>
+                    <option value="CHECKED_IN">Checked In</option>
+                    <option value="NOT_CHECKED_IN">Not Checked In</option>
+                  </select>
+                  <div className="glass" style={styles.searchWrapper}>
+                    <Search size={18} color="var(--primary)" />
+                    <input 
+                      placeholder="Search name, email, group..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      style={styles.searchInput}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -275,6 +329,7 @@ const OrganizerEventDetails = () => {
                         <th style={styles.th}>Price</th>
                         <th style={styles.th}>Group / Group Code</th>
                         <th style={styles.th}>Check-In Status</th>
+                        {event?.number_of_days > 1 && <th style={styles.th}>Days Attended</th>}
                         <th style={styles.th}>Date Registered</th>
                       </tr>
                     </thead>
@@ -301,15 +356,25 @@ const OrganizerEventDetails = () => {
                           </td>
                           <td style={styles.td}>
                             {r.checked_in ? (
-                              <span style={{ ...styles.statusBadge, color: '#22c55e', background: 'rgba(34,197,94,0.1)' }}>
-                                <Check size={12} /> Checked In
-                              </span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                <span style={{ ...styles.statusBadge, color: '#22c55e', background: 'rgba(34,197,94,0.1)' }}>
+                                  <Check size={12} /> Checked In
+                                </span>
+                                {r.checkin_history && r.checkin_history.length > 0 && (
+                                  <span style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>Last: {r.checkin_history[0].date} {r.checkin_history[0].time.substring(0,5)}</span>
+                                )}
+                              </div>
                             ) : (
                               <span style={{ ...styles.statusBadge, color: 'var(--primary)', background: 'rgba(255,177,115,0.1)' }}>
-                                <Clock size={12} /> Confirmed
+                                <Clock size={12} /> Pending
                               </span>
                             )}
                           </td>
+                          {event?.number_of_days > 1 && (
+                            <td style={{ ...styles.td, fontWeight: 800 }}>
+                              {r.attendance_days_count || 0} / {event.number_of_days}
+                            </td>
+                          )}
                           <td style={{ ...styles.td, fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>
                             {new Date(r.registered_at).toLocaleDateString()}
                           </td>
@@ -337,7 +402,7 @@ const OrganizerEventDetails = () => {
                       <input type={type} value={editForm[field] || ''} onChange={e => setEditForm({...editForm, [field]: e.target.value})} style={styles.editInput} />
                     </div>
                   ))}
-                  {[['start_date','Start Date'],['end_date','End Date'],['registration_deadline','Registration Deadline']].map(([field, label]) => (
+                  {[['start_date','Start Date'],['end_date','End Date'],['registration_start','Registration Start'],['registration_deadline','Registration Deadline']].map(([field, label]) => (
                     <div key={field} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <label style={styles.editLabel}>{label}</label>
                       <input type="datetime-local" value={editForm[field] || ''} onChange={e => setEditForm({...editForm, [field]: e.target.value})} style={styles.editInput} />
