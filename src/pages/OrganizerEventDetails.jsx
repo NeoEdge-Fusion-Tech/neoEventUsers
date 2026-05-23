@@ -35,6 +35,16 @@ const OrganizerEventDetails = () => {
   // Search and Filter registrations
   const [searchQuery, setSearchQuery] = useState('');
   const [checkInFilter, setCheckInFilter] = useState('ALL');
+  const [checkedInDateFilter, setCheckedInDateFilter] = useState('ALL');
+  const [selectedHistoryUser, setSelectedHistoryUser] = useState(null);
+  
+  // Admin Check-in Modal
+  const [adminCheckInTarget, setAdminCheckInTarget] = useState(null);
+  const [adminCheckInDate, setAdminCheckInDate] = useState('');
+
+  // Expanded inline history rows
+  const [expandedRows, setExpandedRows] = useState({});
+  const toggleRow = (id) => setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
 
   // Edit event state
   const [editForm, setEditForm] = useState(null);
@@ -82,9 +92,12 @@ const OrganizerEventDetails = () => {
     setRegsLoading(true);
     try {
       const response = await api.get(`/events/${eventId}/registrations/`);
-      setRegistrations(response.data.results || response.data || []);
+      const data = response.data;
+      // Handle both paginated and non-paginated responses
+      const list = Array.isArray(data) ? data : (data.results || []);
+      setRegistrations(list);
     } catch (err) {
-      console.error('Failed to fetch registrations', err);
+      console.error('Failed to fetch registrations', err.response?.status, err.response?.data);
     } finally {
       setRegsLoading(false);
     }
@@ -157,11 +170,28 @@ const OrganizerEventDetails = () => {
     }
   };
 
+  const handleAdminCheckIn = async (e) => {
+    e.preventDefault();
+    if (!adminCheckInTarget || !adminCheckInDate) return;
+    
+    try {
+      await api.post(`/check-in/${adminCheckInTarget.registration_code}/`, {
+        device_id: 'admin',
+        date: adminCheckInDate
+      });
+      // Refresh registrations
+      setAdminCheckInTarget(null);
+      fetchRegistrations();
+    } catch (err) {
+      alert(err.response?.data?.detail || "Failed to check in attendee.");
+    }
+  };
+
   const filteredRegistrations = registrations.filter(r => {
     if (checkInFilter === 'CHECKED_IN' && !r.checked_in) return false;
     if (checkInFilter === 'NOT_CHECKED_IN' && r.checked_in) return false;
 
-    const query = searchQuery.toLowerCase();
+    const query = (searchQuery || '').toLowerCase();
     const name = (r.attendee_name_display || '').toLowerCase();
     const email = (r.attendee_email_display || '').toLowerCase();
     const ticket = (r.ticket_type_name || '').toLowerCase();
@@ -174,11 +204,77 @@ const OrganizerEventDetails = () => {
   const checkedInCount = registrations.filter(r => r.checked_in).length;
   const notCheckedInCount = registeredCount - checkedInCount;
 
-  const handleExport = async (type) => {
-    try {
-      const response = await api.get(`/events/${eventId}/export/?type=${type}`, {
-        responseType: 'blob'
+  const getEventDaysList = () => {
+    if (!event || !event.start_date) return [];
+    const days = event.number_of_days || 1;
+    const startDate = new Date(event.start_date);
+    const dateList = [];
+    
+    for (let i = 0; i < days; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+      const weekday = d.toLocaleDateString(undefined, { weekday: 'short' });
+      
+      dateList.push({
+        value: dateString,
+        label: `Day ${i + 1} (${dateString}, ${weekday})`
       });
+    }
+    return dateList;
+  };
+  
+  const eventDays = getEventDaysList();
+
+  // Given a YYYY-MM-DD date string, compute Day N, weekday, formatted date
+  const getEventDayInfo = (checkinDateStr) => {
+    if (!checkinDateStr || !event?.start_date) return null;
+    const [sy, sm, sd] = event.start_date.substring(0, 10).split('-').map(Number);
+    const [cy, cm, cd] = checkinDateStr.split('-').map(Number);
+    const startUTC = Date.UTC(sy, sm - 1, sd);
+    const ciUTC = Date.UTC(cy, cm - 1, cd);
+    const dayNum = Math.floor((ciUTC - startUTC) / 86400000) + 1;
+    const ciDate = new Date(cy, cm - 1, cd);
+    const weekday = ciDate.toLocaleDateString(undefined, { weekday: 'long' });
+    const dateStr = ciDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    return { dayNum: Math.max(1, dayNum), weekday, dateStr };
+  };
+
+  // Given a registration, return event days not yet checked in
+  const getRemainingDays = (r) => {
+    const checkedDates = new Set((r.checkin_history || []).map(ch => ch.date));
+    return eventDays.filter(d => !checkedDates.has(d.value));
+  };
+
+  const filteredCheckedInAttendees = registrations.filter(r => {
+    if (!r.checked_in) return false;
+    if (checkedInDateFilter !== 'ALL') {
+      const hasCheckedInOnDate = (r.checkin_history || []).some(ch => ch.date === checkedInDateFilter);
+      if (!hasCheckedInOnDate) return false;
+    }
+    
+    const query = (searchQuery || '').toLowerCase();
+    const name = (r.attendee_name_display || '').toLowerCase();
+    const email = (r.attendee_email_display || '').toLowerCase();
+    const ticket = (r.ticket_type_name || '').toLowerCase();
+    return name.includes(query) || email.includes(query) || ticket.includes(query);
+  });
+
+  const handleExport = async () => {
+    try {
+      const type = activeTab === 'participants' ? 'registrations' : 'daily_checkins';
+      let endpoint = `/events/${eventId}/export/?type=${type}`;
+      
+      if (type === 'daily_checkins' && checkedInDateFilter !== 'ALL') {
+        endpoint += `&date=${checkedInDateFilter}`;
+      } else if (type === 'registrations' && checkInFilter !== 'ALL') {
+        endpoint += `&status=${checkInFilter}`;
+      }
+
+      const response = await api.get(endpoint, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -259,7 +355,12 @@ const OrganizerEventDetails = () => {
 
       {/* Tabs switching */}
       <div style={styles.tabs}>
-        {[['participants', `Participants (${registrations.length})`], ['vendors', `Vendors (${(event.event_photographers||[]).length})`], ['edit', 'Edit Event']].map(([tab, label]) => (
+        {[
+          ['participants', `Participants (${registrations.length})`], 
+          ['checked_in', `Checked In Attendee (${checkedInCount})`],
+          ['vendors', `Vendors (${(event.event_photographers||[]).length})`], 
+          ['edit', 'Edit Event']
+        ].map(([tab, label]) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -285,11 +386,8 @@ const OrganizerEventDetails = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <h2 style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.5px' }}>Registered Attendees</h2>
-                  <button onClick={() => handleExport('registrations')} className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800, border: '1px solid var(--primary)', color: 'var(--primary)', cursor: 'pointer' }}>
-                    CSV: REGISTRATIONS
-                  </button>
-                  <button onClick={() => handleExport('daily_checkins')} className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800, border: '1px solid var(--primary)', color: 'var(--primary)', cursor: 'pointer' }}>
-                    CSV: DAILY LOGS
+                  <button onClick={handleExport} className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800, border: '1px solid var(--primary)', color: 'var(--primary)', cursor: 'pointer' }}>
+                    DOWNLOAD CSV
                   </button>
                 </div>
                 
@@ -329,57 +427,275 @@ const OrganizerEventDetails = () => {
                         <th style={styles.th}>Price</th>
                         <th style={styles.th}>Group / Group Code</th>
                         <th style={styles.th}>Check-In Status</th>
+                        <th style={styles.th}>Last Checked In</th>
                         {event?.number_of_days > 1 && <th style={styles.th}>Days Attended</th>}
                         <th style={styles.th}>Date Registered</th>
+                        <th style={styles.th}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredRegistrations.map(r => (
-                        <tr key={r.id} style={styles.tr}>
-                          <td style={styles.td}>
-                            <div style={{ fontWeight: 'bold' }}>{r.attendee_name_display}</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>{r.attendee_email_display}</div>
-                          </td>
-                          <td style={styles.td}>
-                            <span style={styles.ticketBadge}>{r.ticket_type_name || 'Regular'}</span>
-                          </td>
-                          <td style={styles.td}><span style={{ fontWeight: 800 }}>{getCurrencySymbol(event?.currency)}{parseFloat(r.ticket_type_price || 0).toFixed(2)}</span></td>
-                          <td style={styles.td}>
-                            {r.group_name ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                <span style={styles.groupBadge}><Group size={12} /> {r.group_name}</span>
-                                <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>Code: {r.group_code?.slice(0,8)}</span>
-                              </div>
-                            ) : (
-                              <span style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>Individual Ticket</span>
-                            )}
-                          </td>
-                          <td style={styles.td}>
-                            {r.checked_in ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                <span style={{ ...styles.statusBadge, color: '#22c55e', background: 'rgba(34,197,94,0.1)' }}>
-                                  <Check size={12} /> Checked In
-                                </span>
-                                {r.checkin_history && r.checkin_history.length > 0 && (
-                                  <span style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>Last: {r.checkin_history[0].date} {r.checkin_history[0].time.substring(0,5)}</span>
+                      {filteredRegistrations.map(r => {
+                        const lastCI = r.checkin_history && r.checkin_history.length > 0 ? r.checkin_history[0] : null;
+                        const lastDayInfo = lastCI ? getEventDayInfo(lastCI.date) : null;
+                        const remainingDays = getRemainingDays(r);
+                        const isExpanded = expandedRows[r.id];
+
+                        return (
+                          <React.Fragment key={r.id}>
+                            <tr style={styles.tr}>
+                              <td style={styles.td}>
+                                <div style={{ fontWeight: 'bold' }}>{r.attendee_name_display}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>{r.attendee_email_display}</div>
+                              </td>
+                              <td style={styles.td}>
+                                <span style={styles.ticketBadge}>{r.ticket_type_name || 'Regular'}</span>
+                              </td>
+                              <td style={styles.td}><span style={{ fontWeight: 800 }}>{getCurrencySymbol(event?.currency)}{parseFloat(r.ticket_type_price || 0).toFixed(2)}</span></td>
+                              <td style={styles.td}>
+                                {r.group_name ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                    <span style={styles.groupBadge}><Group size={12} /> {r.group_name}</span>
+                                    <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>Code: {r.group_code?.slice(0,8)}</span>
+                                  </div>
+                                ) : (
+                                  <span style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>Individual Ticket</span>
                                 )}
-                              </div>
-                            ) : (
-                              <span style={{ ...styles.statusBadge, color: 'var(--primary)', background: 'rgba(255,177,115,0.1)' }}>
-                                <Clock size={12} /> Pending
-                              </span>
+                              </td>
+                              <td style={styles.td}>
+                                {r.checked_in ? (
+                                  <span style={{ ...styles.statusBadge, color: '#22c55e', background: 'rgba(34,197,94,0.1)' }}>
+                                    <Check size={12} /> Checked In
+                                  </span>
+                                ) : (
+                                  <span style={{ ...styles.statusBadge, color: 'var(--primary)', background: 'rgba(255,177,115,0.1)' }}>
+                                    <Clock size={12} /> Pending
+                                  </span>
+                                )}
+                              </td>
+                              {/* Last Checked In */}
+                              <td style={styles.td}>
+                                {lastCI && lastDayInfo ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                                    <span style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '0.8rem' }}>Day {lastDayInfo.dayNum}</span>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--on-surface)' }}>{lastDayInfo.weekday}</span>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>{lastDayInfo.dateStr}</span>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>{lastCI.time.substring(0,5)}</span>
+                                  </div>
+                                ) : (
+                                  <span style={{ color: 'var(--on-surface-variant)', fontSize: '0.8rem' }}>—</span>
+                                )}
+                              </td>
+                              {event?.number_of_days > 1 && (
+                                <td style={{ ...styles.td, fontWeight: 800 }}>
+                                  {r.attendance_days_count || 0} / {event.number_of_days}
+                                </td>
+                              )}
+                              <td style={{ ...styles.td, fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>
+                                {new Date(r.registered_at).toLocaleDateString()}
+                              </td>
+                              {/* Actions */}
+                              <td style={{ ...styles.td }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-start' }}>
+                                  {remainingDays.length > 0 && (
+                                    <button
+                                      onClick={() => {
+                                        setAdminCheckInTarget(r);
+                                        setAdminCheckInDate(remainingDays[0].value);
+                                      }}
+                                      className="glass"
+                                      style={{ padding: '0.3rem 0.7rem', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, border: '1px solid var(--primary)', color: 'var(--primary)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                    >
+                                      CHECK IN
+                                    </button>
+                                  )}
+                                  {r.checkin_history && r.checkin_history.length > 0 && (
+                                    <button
+                                      onClick={() => toggleRow(r.id)}
+                                      style={{ background: 'none', border: 'none', color: 'var(--on-surface-variant)', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', padding: 0, whiteSpace: 'nowrap', textDecoration: 'underline' }}
+                                    >
+                                      {isExpanded ? '▲ Hide Records' : '▼ Check-in Records'}
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+
+                            {/* Inline expandable check-in history sub-table */}
+                            {isExpanded && r.checkin_history && r.checkin_history.length > 0 && (
+                              <tr style={{ background: 'rgba(0,0,0,0.12)' }}>
+                                <td colSpan={7 + (event?.number_of_days > 1 ? 1 : 0)} style={{ padding: '0 1.2rem 1.5rem 3rem' }}>
+                                  <div style={{ borderLeft: '3px solid var(--primary)', paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
+                                    <div style={{ fontSize: '0.72rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.8rem' }}>Check-In Records</div>
+                                    <table style={{ ...styles.table, fontSize: '0.8rem' }}>
+                                      <thead>
+                                        <tr>
+                                          <th style={{ ...styles.th, fontSize: '0.7rem', padding: '0.6rem 1rem' }}>Day</th>
+                                          <th style={{ ...styles.th, fontSize: '0.7rem', padding: '0.6rem 1rem' }}>Date</th>
+                                          <th style={{ ...styles.th, fontSize: '0.7rem', padding: '0.6rem 1rem' }}>Day of Week</th>
+                                          <th style={{ ...styles.th, fontSize: '0.7rem', padding: '0.6rem 1rem' }}>Timestamp</th>
+                                          <th style={{ ...styles.th, fontSize: '0.7rem', padding: '0.6rem 1rem' }}>Device</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {r.checkin_history.map((ch, idx) => {
+                                          const info = getEventDayInfo(ch.date);
+                                          return (
+                                            <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                              <td style={{ padding: '0.6rem 1rem', fontWeight: 900, color: 'var(--primary)' }}>
+                                                {info ? `Day ${info.dayNum}` : ch.date}
+                                              </td>
+                                              <td style={{ padding: '0.6rem 1rem', color: 'var(--on-surface)' }}>
+                                                {info ? info.dateStr : ch.date}
+                                              </td>
+                                              <td style={{ padding: '0.6rem 1rem', color: 'var(--on-surface-variant)' }}>
+                                                {info ? info.weekday : '—'}
+                                              </td>
+                                              <td style={{ padding: '0.6rem 1rem', color: 'var(--on-surface-variant)' }}>
+                                                {ch.time.substring(0, 8)}
+                                              </td>
+                                              <td style={{ padding: '0.6rem 1rem', color: 'var(--on-surface-variant)' }}>
+                                                {ch.device_id || 'Unknown'}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </td>
+                              </tr>
                             )}
-                          </td>
-                          {event?.number_of_days > 1 && (
-                            <td style={{ ...styles.td, fontWeight: 800 }}>
-                              {r.attendance_days_count || 0} / {event.number_of_days}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'checked_in' && (
+            <div className="glass" style={{ padding: '3rem', borderRadius: '32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <h2 style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.5px' }}>Checked In Attendees</h2>
+                  <button onClick={handleExport} className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800, border: '1px solid var(--primary)', color: 'var(--primary)', cursor: 'pointer' }}>
+                    DOWNLOAD CSV
+                  </button>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <select 
+                    value={checkedInDateFilter} 
+                    onChange={e => setCheckedInDateFilter(e.target.value)}
+                    style={{ ...styles.searchInput, border: '1px solid var(--glass-border)', borderRadius: '12px', background: 'var(--surface-highest)' }}
+                  >
+                    <option value="ALL">All Days</option>
+                    {eventDays.map(d => (
+                      <option key={d.value} value={d.value}>{d.label}</option>
+                    ))}
+                  </select>
+                  <div className="glass" style={styles.searchWrapper}>
+                    <Search size={18} color="var(--primary)" />
+                    <input 
+                      placeholder="Search name, email, group..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      style={styles.searchInput}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {regsLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><Loader2 className="animate-spin" size={32} /></div>
+              ) : filteredCheckedInAttendees.length === 0 ? (
+                <p style={{ color: 'var(--on-surface-variant)', textAlign: 'center', padding: '3rem 0', fontWeight: 600 }}>No checked in attendees found.</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        <th style={styles.th}>Attendee</th>
+                        <th style={styles.th}>Ticket Type</th>
+                        <th style={styles.th}>Group</th>
+                        <th style={styles.th}>Days Attended</th>
+                        <th style={styles.th}>Event Day</th>
+                        <th style={styles.th}>Check-In Time</th>
+                        <th style={styles.th}>Device Used</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCheckedInAttendees.map(r => {
+                        const checkinForDate = (r.checkin_history || []).find(ch => ch.date === (checkedInDateFilter !== 'ALL' ? checkedInDateFilter : r.checkin_history[0]?.date));
+                        
+                        // Compute event day number, full date, and weekday from checkin date
+                        const getEventDayInfo = (checkinDate) => {
+                          if (!checkinDate || !event?.start_date) return null;
+                          const start = new Date(event.start_date);
+                          start.setHours(0, 0, 0, 0);
+                          const ci = new Date(checkinDate);
+                          ci.setHours(0, 0, 0, 0);
+                          const diffMs = ci - start;
+                          const dayNum = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+                          const weekday = ci.toLocaleDateString(undefined, { weekday: 'long' });
+                          const dateStr = ci.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                          return { dayNum, weekday, dateStr };
+                        };
+
+                        const dayInfo = checkinForDate ? getEventDayInfo(checkinForDate.date) : null;
+
+                        return (
+                          <tr key={r.id} style={styles.tr}>
+                            <td style={styles.td}>
+                              <div style={{ fontWeight: 'bold' }}>{r.attendee_name_display}</div>
+                              <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>{r.attendee_email_display}</div>
                             </td>
-                          )}
-                          <td style={{ ...styles.td, fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>
-                            {new Date(r.registered_at).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      ))}
+                            <td style={styles.td}>
+                              <span style={styles.ticketBadge}>{r.ticket_type_name || 'Regular'}</span>
+                            </td>
+                            <td style={styles.td}>
+                              {r.group_name ? (
+                                <span style={styles.groupBadge}><Group size={12} /> {r.group_name}</span>
+                              ) : '-'}
+                            </td>
+                            <td style={{ ...styles.td, fontWeight: 800, textAlign: 'center' }}>
+                              <span style={{ background: 'rgba(255,177,115,0.1)', color: 'var(--primary)', padding: '0.3rem 0.7rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 900 }}>
+                                {r.attendance_days_count || 1} / {event.number_of_days || 1}
+                              </span>
+                            </td>
+                            <td style={styles.td}>
+                              {dayInfo ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                  <span style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '0.9rem' }}>
+                                    Day {dayInfo.dayNum}
+                                  </span>
+                                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--on-surface)' }}>
+                                    {dayInfo.weekday}
+                                  </span>
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>
+                                    {dayInfo.dateStr}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span style={{ color: 'var(--on-surface-variant)', fontSize: '0.85rem' }}>—</span>
+                              )}
+                            </td>
+                            <td style={{ ...styles.td, fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>
+                              {checkinForDate ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <Clock size={14} color="#22c55e" />
+                                  {checkinForDate.time.substring(0, 5)}
+                                </div>
+                              ) : '—'}
+                            </td>
+                            <td style={{ ...styles.td, fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>
+                              {checkinForDate?.device_id || 'Unknown Device'}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -571,6 +887,99 @@ const OrganizerEventDetails = () => {
           </div>
         </aside>
       </div>
+
+      {/* Check-in History Modal */}
+      {selectedHistoryUser && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="glass" style={{ padding: '2rem', borderRadius: '24px', width: '100%', maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Check-in History</h3>
+              <button onClick={() => setSelectedHistoryUser(null)} style={{ background: 'none', border: 'none', color: 'var(--on-surface)', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ fontWeight: 800 }}>{selectedHistoryUser.attendee_name_display}</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>{selectedHistoryUser.attendee_email_display}</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {(selectedHistoryUser.checkin_history || []).map((ch, idx) => {
+                const dayMatch = eventDays.find(d => d.value === ch.date);
+                const dayLabel = dayMatch ? dayMatch.label : ch.date;
+                return (
+                  <div key={idx} style={{ padding: '1.2rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    <div style={{ fontWeight: 800, color: 'var(--primary)' }}>{dayLabel}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                      <span style={{ color: 'var(--on-surface-variant)' }}>Time:</span>
+                      <span>{ch.time.substring(0, 5)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                      <span style={{ color: 'var(--on-surface-variant)' }}>Device:</span>
+                      <span>{ch.device_id || 'Unknown Device'}</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {(!selectedHistoryUser.checkin_history || selectedHistoryUser.checkin_history.length === 0) && (
+                <p style={{ textAlign: 'center', color: 'var(--on-surface-variant)' }}>No check-in records found.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Check-in Modal */}
+      {adminCheckInTarget && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="glass" style={{ padding: '2.5rem', borderRadius: '24px', width: '100%', maxWidth: '450px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Admin Check-In</h3>
+              <button onClick={() => setAdminCheckInTarget(null)} style={{ background: 'none', border: 'none', color: 'var(--on-surface)', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            
+            <div style={{ marginBottom: '2rem' }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', marginBottom: '0.3rem' }}>Checking in:</div>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--primary)' }}>{adminCheckInTarget.attendee_name_display}</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>{adminCheckInTarget.ticket_type_name || 'Regular'}</div>
+            </div>
+
+            <form onSubmit={handleAdminCheckIn} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={styles.editLabel}>Select Event Day</label>
+                {(() => {
+                  const remainingDays = getRemainingDays(adminCheckInTarget);
+                  return remainingDays.length > 0 ? (
+                    <select 
+                      value={adminCheckInDate}
+                      onChange={(e) => setAdminCheckInDate(e.target.value)}
+                      required
+                      style={styles.editInput}
+                    >
+                      <option value="" disabled>Select a day...</option>
+                      {remainingDays.map(d => (
+                        <option key={d.value} value={d.value}>{d.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div style={{ padding: '1rem', borderRadius: '10px', background: 'rgba(34,197,94,0.08)', color: '#22c55e', fontWeight: 700, fontSize: '0.9rem' }}>
+                      ✓ All days checked in
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setAdminCheckInTarget(null)} style={{ flex: 1, padding: '1rem', borderRadius: '12px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--on-surface)', fontWeight: 800, cursor: 'pointer' }}>
+                  CANCEL
+                </button>
+                {getRemainingDays(adminCheckInTarget).length > 0 && (
+                  <button type="submit" className="btn-primary" style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: 800 }}>
+                    CHECK IN
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -590,7 +999,7 @@ const styles = {
   th: { padding: '1.2rem', borderBottom: '2px solid var(--glass-border)', fontSize: '0.8rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' },
   tr: { borderBottom: '1px solid var(--glass-border)' },
   td: { padding: '1.4rem 1.2rem', verticalAlign: 'middle' },
-  ticketBadge: { background: 'var(--primary)', color: 'white', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900 },
+  ticketBadge: { display: 'inline-block', background: 'rgba(255,255,255,0.05)', color: 'var(--primary)', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, whiteSpace: 'nowrap', border: '1px solid var(--glass-border)' },
   groupBadge: { background: 'rgba(0,0,0,0.06)', color: 'var(--on-surface)', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' },
   statusBadge: { display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900 },
   vendorCard: { padding: '1.4rem', borderRadius: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 177, 115, 0.03)', border: '1px solid var(--glass-border)' },
