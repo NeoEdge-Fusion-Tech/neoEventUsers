@@ -5,16 +5,13 @@ import {
   Disc, Sun, Moon, Camera, Image as ImageIcon,
   Briefcase // Added for generic Vendor icon
 } from 'lucide-react';
-// import { ThemeContext } from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 import { useAuth } from "../hooks/useAuth"; // Point to the hook file
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
-  
-  // Temporary: Mocking theme until ThemeContext is created
-  const theme = 'light'; 
-  const toggleTheme = () => console.log("Theme toggle clicked");
+  const { theme, toggleTheme } = useTheme();
 
   const NavItem = ({ to, label, icon: Icon }) => {
     const isActive = location.pathname === to;

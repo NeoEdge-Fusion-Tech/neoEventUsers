@@ -22,6 +22,11 @@ API.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Prevent infinite loop if refresh token request itself fails with 401
+    if (originalRequest.url && originalRequest.url.includes('account/refresh/')) {
+      return Promise.reject(error);
+    }
+
     // Only attempt refresh on 401 and if we haven't already tried
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;

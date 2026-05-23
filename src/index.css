@@ -122,3 +122,20 @@ button {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
 }
+
+/* Invert Native Calendar/Date Picker Indicators */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.9) sepia(0.2) saturate(1) hue-rotate(180deg);
+  opacity: 0.85;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  filter: invert(0.7) sepia(1) saturate(5) hue-rotate(15deg); /* Beautiful vibrant primary orange complement! */
+  opacity: 1;
+}

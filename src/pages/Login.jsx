@@ -52,13 +52,13 @@ const LoginPage = () => {
 
         <form onSubmit={handleLogin} style={styles.form}>
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Username</label>
+            <label style={styles.label}>Email</label>
             <div style={styles.inputWrapper}>
               <Mail style={styles.icon} size={20} />
               <input
-                type="text"
+                type="email"
                 name="username"
-                placeholder="Enter your username"
+                placeholder="Enter your email"
                 value={formData.username}
                 onChange={handleChange}
                 required
@@ -108,7 +108,8 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', // Or your theme background
+    backgroundColor: 'var(--bg-color)',
+    color: 'var(--on-surface)',
     padding: '20px'
   },
   loginCard: {
@@ -116,17 +117,13 @@ const styles = {
     maxWidth: '450px',
     padding: '40px',
     borderRadius: '24px',
-    background: 'rgba(255, 255, 255, 0.8)',
-    backdropFilter: 'blur(10px)',
-    boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-    border: '1px solid rgba(255, 255, 255, 0.18)',
   },
   header: { textAlign: 'center', marginBottom: '30px' },
-  title: { fontSize: '1.8rem', fontWeight: 800, margin: '10px 0 5px' },
-  subtitle: { color: '#666', fontSize: '0.9rem' },
+  title: { fontSize: '1.8rem', fontWeight: 800, margin: '10px 0 5px', color: 'var(--on-surface)' },
+  subtitle: { color: 'var(--on-surface-variant)', fontSize: '0.9rem' },
   form: { display: 'flex', flexDirection: 'column', gap: '20px' },
   inputGroup: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  label: { fontSize: '0.85rem', fontWeight: 700, color: '#444' },
+  label: { fontSize: '0.85rem', fontWeight: 700, color: 'var(--on-surface)' },
   inputWrapper: {
     position: 'relative',
     display: 'flex',
@@ -137,7 +134,9 @@ const styles = {
     width: '100%',
     padding: '12px 12px 12px 42px',
     borderRadius: '12px',
-    border: '1px solid #ddd',
+    border: '1px solid var(--glass-border)',
+    backgroundColor: 'var(--surface)',
+    color: 'var(--on-surface)',
     fontSize: '1rem',
     outline: 'none',
     transition: 'border-color 0.3s'
@@ -147,8 +146,8 @@ const styles = {
     padding: '14px',
     borderRadius: '12px',
     border: 'none',
-    background: 'black', // Match your branding
-    color: 'white',
+    background: 'var(--primary)',
+    color: 'var(--on-primary)',
     fontWeight: 700,
     cursor: 'pointer',
     display: 'flex',
@@ -157,8 +156,9 @@ const styles = {
     gap: '10px'
   },
   errorAlert: {
-    background: '#fee2e2',
-    color: '#b91c1c',
+    background: 'rgba(239, 68, 68, 0.1)',
+    color: '#ef4444',
+    border: '1px solid rgba(239, 68, 68, 0.2)',
     padding: '12px',
     borderRadius: '10px',
     marginBottom: '20px',
@@ -167,7 +167,7 @@ const styles = {
     gap: '10px',
     fontSize: '0.85rem'
   },
-  footer: { marginTop: '25px', textAlign: 'center', fontSize: '0.9rem', color: '#666' },
+  footer: { marginTop: '25px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--on-surface-variant)' },
   signupLink: { marginLeft: '5px', color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }
 };
 

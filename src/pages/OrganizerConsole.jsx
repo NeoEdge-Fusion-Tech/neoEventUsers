@@ -13,7 +13,7 @@ const OrganizerConsole = () => {
     const fetchOwnedEvents = async () => {
       try {
         const response = await api.get('/events/owned/');
-        setEvents(response.data);
+        setEvents(response.data.results || response.data || []);
       } catch (err) {
         console.error('Failed to fetch owned events', err);
       } finally {

@@ -18,7 +18,13 @@ import Signup from './pages/Signup';
 
 import VendorDashboard from './pages/VendorDashboard';
 import OwnerDashboard from './pages/OwnerDashboard';
-
+import PublicVendorProfile from './pages/PublicVendorProfile';
+import ProfileSettings from './pages/ProfileSettings';
+import MyTickets from './pages/MyTickets';
+import Registration from './pages/Registration';
+import OrganizerEventDetails from './pages/OrganizerEventDetails';
+import EventConsole from './pages/EventConsole';
+import PhotoGallery from './pages/PhotoGallery';
 
 function App() {
   return (
@@ -50,8 +56,6 @@ function App() {
                 element={<Signup />}
               />
 
-              {/* Vendor Routes */}
-
               <Route
                 path="/vendor/dashboard"
                 element={
@@ -60,15 +64,72 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              
+              <Route
+                path="/vendor/profile/:id"
+                element={<PublicVendorProfile />}
+              />
 
+
+              {/* Attendee Routes */}
+              <Route
+                path="/tickets"
+                element={
+                  <ProtectedRoute allowedRoles={['ATTENDEE']}>
+                    <MyTickets />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/event-console/:regId"
+                element={
+                  <ProtectedRoute allowedRoles={['ATTENDEE']}>
+                    <EventConsole />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/gallery"
+                element={
+                  <ProtectedRoute>
+                    <PhotoGallery />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Public Registration Purchase Route */}
+              <Route
+                path="/register/:eventId"
+                element={<Registration />}
+              />
+
+              {/* Settings Route */}
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <ProfileSettings />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Owner Routes */}
-
               <Route
                 path="/owner/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['OWNER']}>
                     <OwnerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/organizer/event/:eventId"
+                element={
+                  <ProtectedRoute allowedRoles={['OWNER']}>
+                    <OrganizerEventDetails />
                   </ProtectedRoute>
                 }
               />

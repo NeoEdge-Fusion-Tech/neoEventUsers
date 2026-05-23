@@ -15,12 +15,12 @@ const EventConsole = () => {
   useEffect(() => {
     const fetchConsoleData = async () => {
       try {
-        const regRes = await api.get(`/registrations/${regId}/`);
+        const regRes = await api.get(`/attendee/registrations/${regId}/`);
         setRegistration(regRes.data);
         
         // Fetch photos for this event
         const photoRes = await api.get(`/photos/gallery/?event_id=${regRes.data.event}&category=${galleryCategory}`);
-        setPhotos(photoRes.data);
+        setPhotos(photoRes.data.results || photoRes.data);
       } catch (err) {
         console.error('Failed to fetch console data', err);
       } finally {

@@ -3,6 +3,7 @@ import { Calendar, MapPin, Clock, ChevronRight, Loader2, Archive, Globe, Play } 
 import api from '../api';
 import { formatDateRange } from '../utils/dateUtils';
 import { useNavigate } from 'react-router-dom';
+import { ticketService } from '../api/ticket';
 
 const MyEvents = () => {
   const [registrations, setRegistrations] = useState([]);
@@ -12,8 +13,16 @@ const MyEvents = () => {
   useEffect(() => {
     const fetchRegistrations = async () => {
       try {
-        const response = await api.get('/registrations/');
-        setRegistrations(response.data);
+        const [upcomingRes, pastRes] = await Promise.all([
+          ticketService.getUpcomingEvents(),
+          ticketService.getPastEvents()
+        ]);
+        
+        // Combine results. Depending on DRF pagination, it might be in .data.results
+        const upcoming = upcomingRes.data.results || upcomingRes.data || [];
+        const past = pastRes.data.results || pastRes.data || [];
+        
+        setRegistrations([...upcoming, ...past]);
       } catch (err) {
         console.error('Failed to fetch registrations', err);
       } finally {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Calendar, ArrowRight, Loader2, Play } from 'lucide-react';
-// import api from '../api';
+import api from '../api/axios';
 import { formatDateRange } from '../utils/dateUtils';
 import { Link } from 'react-router-dom';
 
@@ -12,7 +12,7 @@ const Home = () => {
     const fetchEvents = async () => {
       try {
         const response = await api.get('/events/');
-        setEvents(response.data);
+        setEvents(response.data.results || response.data || []);
       } catch (err) {
         console.error('Failed to fetch events', err);
       } finally {

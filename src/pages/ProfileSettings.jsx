@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Camera, Save, Loader2, ShieldCheck, Fingerprint, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
-import api from '../api';
-import { getCurrentUser } from '../api/auth';
+import api from '../api/axios';
+const getCurrentUser = () => {
+  const u = localStorage.getItem('user');
+  try { return u ? JSON.parse(u) : null; } catch(e) { return null; }
+};
 
 const ProfileSettings = () => {
   const [user, setUser] = useState(getCurrentUser());

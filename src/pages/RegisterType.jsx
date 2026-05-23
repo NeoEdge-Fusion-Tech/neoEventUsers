@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Briefcase, ChevronRight, Disc } from 'lucide-react';
+import { Calendar, Briefcase, ChevronRight, Disc, User } from 'lucide-react';
 
 const RegisterType = () => {
   const options = [
@@ -17,6 +17,13 @@ const RegisterType = () => {
       icon: Briefcase,
       path: "/signup/vendor",
       color: "#73B5FF"
+    },
+    {
+      title: "Event Attendee",
+      desc: "I want to register for events, manage my tickets, and access my photos.",
+      icon: User,
+      path: "/signup/attendee",
+      color: "#A259FF"
     }
   ];
 
@@ -51,21 +58,24 @@ const RegisterType = () => {
 };
 
 const styles = {
-  container: { height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC' },
+  container: { height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', color: 'var(--on-surface)' },
   content: { textAlign: 'center', maxWidth: '800px', width: '100%', padding: '20px' },
   title: { fontSize: '2.5rem', fontWeight: 900, marginBottom: '10px' },
-  subtitle: { color: '#64748b', marginBottom: '40px' },
+  subtitle: { color: 'var(--on-surface-variant)', marginBottom: '40px' },
   grid: { display: 'flex', gap: '20px', flexDirection: 'column' },
   card: { 
-    display: 'flex', alignItems: 'center', padding: '30px', background: 'white', 
+    display: 'flex', alignItems: 'center', padding: '30px', 
+    background: 'var(--glass-bg)',
+    backdropFilter: 'var(--glamour-blur)',
+    border: '1px solid var(--glass-border)',
     borderRadius: '24px', textDecoration: 'none', color: 'inherit', textAlign: 'left',
-    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', transition: 'transform 0.2s'
+    boxShadow: 'var(--glass-shadow)', transition: 'transform 0.2s'
   },
   iconBox: { width: '70px', height: '70px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '20px' },
   cardText: { flex: 1 },
   cardTitle: { fontSize: '1.4rem', fontWeight: 800, marginBottom: '5px' },
-  cardDesc: { color: '#64748b', fontSize: '0.95rem' },
-  footer: { marginTop: '30px', fontSize: '0.9rem' }
+  cardDesc: { color: 'var(--on-surface-variant)', fontSize: '0.95rem' },
+  footer: { marginTop: '30px', fontSize: '0.9rem', color: 'var(--on-surface)' }
 };
 
 export default RegisterType;
