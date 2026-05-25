@@ -292,7 +292,7 @@ const OrganizerEventDetails = () => {
   if (!event) return <div style={{ textAlign: 'center', padding: '10rem' }}>Event not found.</div>;
 
   return (
-    <div className="organizer-event-details" style={{ padding: '4rem 6rem', maxWidth: '1400px', margin: '0 auto', color: 'var(--on-surface)' }}>
+    <div className="organizer-event-details" style={{ padding: '2rem 3rem', maxWidth: '1600px', margin: '0 auto', color: 'var(--on-surface)' }}>
       <header style={{ marginBottom: '3rem' }}>
         <Link to="/owner/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--on-surface-variant)', textDecoration: 'none', fontWeight: 800, fontSize: '0.9rem', marginBottom: '2rem' }}>
           <ArrowLeft size={16} /> BACK TO MANAGEMENT
@@ -380,7 +380,7 @@ const OrganizerEventDetails = () => {
       <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1fr', gap: '4rem', alignItems: 'flex-start' }}>
         
         {/* Main section */}
-        <div>
+        <div style={{ minWidth: 0 }}>
           {activeTab === 'participants' && (
             <div className="glass" style={{ padding: '3rem', borderRadius: '32px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -996,12 +996,12 @@ const styles = {
   searchWrapper: { display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0 1rem', borderRadius: '12px', border: '1px solid var(--glass-border)' },
   searchInput: { border: 'none', background: 'transparent', padding: '10px', fontSize: '0.9rem', color: 'var(--on-surface)', outline: 'none', fontWeight: 600, width: '220px' },
   table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left' },
-  th: { padding: '1.2rem', borderBottom: '2px solid var(--glass-border)', fontSize: '0.8rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' },
+  th: { padding: '0.8rem 0.5rem', borderBottom: '2px solid var(--glass-border)', fontSize: '0.7rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' },
   tr: { borderBottom: '1px solid var(--glass-border)' },
-  td: { padding: '1.4rem 1.2rem', verticalAlign: 'middle' },
+  td: { padding: '1rem 0.5rem', verticalAlign: 'middle', fontSize: '0.85rem' },
   ticketBadge: { display: 'inline-block', background: 'rgba(255,255,255,0.05)', color: 'var(--primary)', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, whiteSpace: 'nowrap', border: '1px solid var(--glass-border)' },
   groupBadge: { background: 'rgba(0,0,0,0.06)', color: 'var(--on-surface)', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' },
-  statusBadge: { display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900 },
+  statusBadge: { display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900, whiteSpace: 'nowrap' },
   vendorCard: { padding: '1.4rem', borderRadius: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 177, 115, 0.03)', border: '1px solid var(--glass-border)' },
   asideInput: { width: '100%', padding: '1rem 1rem 1rem 3rem', borderRadius: '12px', background: 'var(--surface-highest)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)', fontWeight: 600, fontSize: '0.9rem', outline: 'none' },
   editInput: { padding: '0.9rem 1rem', borderRadius: '10px', background: 'var(--surface-highest)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)', fontWeight: 600, fontSize: '0.9rem', outline: 'none', width: '100%' },

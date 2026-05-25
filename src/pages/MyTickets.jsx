@@ -80,9 +80,13 @@ const MyTickets = () => {
                            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '2px' }}>Verified Entry</span>
                         </div>
                         <h3 style={{ fontSize: '2rem', marginBottom: '1.2rem', fontWeight: 900, letterSpacing: '-0.5px' }}>{reg.event_title}</h3>
-                        <div style={{ display: 'flex', gap: '2.5rem', color: 'var(--on-surface-variant)', fontSize: '1rem', fontWeight: 500 }}>
+                        <div style={{ display: 'flex', gap: '2.5rem', color: 'var(--on-surface-variant)', fontSize: '1rem', fontWeight: 500, marginBottom: '1.5rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}><Calendar size={20} color="var(--primary)" /> {formatDateRange(reg.event_start_date, reg.event_end_date)}</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}><MapPin size={20} color="var(--primary)" /> {reg.event_location}</div>
+                        </div>
+                        <div style={{ padding: '0.8rem 1.2rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'inline-block', border: '1px solid var(--glass-border)' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '0.2rem', fontWeight: 800 }}>Receipt Code</span>
+                          <code style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--primary)' }}>{reg.registration_code || 'N/A'}</code>
                         </div>
                      </div>
                      <div style={{ display: 'flex', alignItems: 'center' }}>

@@ -137,7 +137,8 @@ const Registration = () => {
       setSuccess(true);
     } catch (err) {
       console.error(err);
-      setErrorMsg(err.response?.data?.email?.[0] || err.response?.data?.ticket_type?.[0] || err.response?.data?.non_field_errors?.[0] || 'Registration failed. Check capacities.');
+      const d = err.response?.data;
+      setErrorMsg(d?.email?.[0] || d?.ticket_type?.[0] || d?.non_field_errors?.[0] || d?.detail || d?.error || 'Registration failed. Please verify your details and try again.');
     } finally {
       setRegistering(false);
     }
@@ -161,7 +162,7 @@ const Registration = () => {
             )}
           </p>
           <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px', marginBottom: '3rem', textAlign: 'left' }}>
-            <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '0.5rem' }}>Receipt Code</div>
+            <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '0.5rem' }}>Receipt Code <span style={{ textTransform: 'none', fontSize: '0.75rem', color: 'var(--on-surface-variant)', letterSpacing: 'normal' }}>(Kindly save it)</span></div>
             <code style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--on-surface)' }}>{regDetails?.registration_code || 'NE-SYNTH-PASS'}</code>
           </div>
           <button className="btn-primary" onClick={() => navigate('/')} style={{ padding: '1.2rem 3rem', borderRadius: '16px', fontWeight: 900 }}>Return to Terminal</button>
