@@ -25,6 +25,7 @@ import Registration from './pages/Registration';
 import OrganizerEventDetails from './pages/OrganizerEventDetails';
 import EventConsole from './pages/EventConsole';
 import PhotoGallery from './pages/PhotoGallery';
+import PaymentVerify from './pages/PaymentVerify';
 
 function App() {
   return (
@@ -103,6 +104,11 @@ function App() {
               <Route
                 path="/register/:eventId"
                 element={<Registration />}
+              />
+
+              <Route
+                path="/payment/verify"
+                element={<PaymentVerify />}
               />
 
               {/* Settings Route */}

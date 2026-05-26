@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Shield, Camera, Calendar, MapPin, Loader2, CheckCircle, Ticket, Users, Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/axios';
+import paymentService from '../api/payment';
 
 const getCurrencySymbol = (code) => {
   switch (code) {
@@ -133,6 +135,19 @@ const Registration = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
+      
+      if (response.data.requires_payment) {
+        // Initialize payment
+        const initRes = await paymentService.initializePayment({ 
+          registration_id: response.data.id,
+          callback_url: `${window.location.origin}/payment/verify`
+        });
+        if (initRes.data.authorization_url) {
+          window.location.href = initRes.data.authorization_url;
+          return;
+        }
+      }
+      
       setRegDetails(response.data);
       setSuccess(true);
     } catch (err) {
@@ -470,14 +485,42 @@ const Registration = () => {
             </p>
           </div>
 
-          <button 
+          <motion.button 
+            whileHover={!registering && selectedTicket ? { scale: 1.02 } : {}}
+            whileTap={!registering && selectedTicket ? { scale: 0.98 } : {}}
             type="submit" 
             disabled={registering || !selectedTicket}
             className="btn-primary" 
-            style={{ marginTop: '1.5rem', height: '64px', fontSize: '1.15rem', fontWeight: 900, borderRadius: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}
+            style={{ marginTop: '1.5rem', height: '64px', fontSize: '1.15rem', fontWeight: 900, borderRadius: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', position: 'relative', overflow: 'hidden' }}
           >
-            {registering ? <Loader2 className="animate-spin" size={24} /> : `Acquire ${purchaseType === 'group' ? `${groupMembers.length} ` : ''}Passes`}
-          </button>
+            <AnimatePresence mode="wait">
+              {registering ? (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
+                >
+                  <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    style={{ width: '24px', height: '24px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%' }}
+                  />
+                  <span>Processing...</span>
+                </motion.div>
+              ) : (
+                <motion.span
+                  key="idle"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                >
+                  {`Acquire ${purchaseType === 'group' ? `${groupMembers.length} ` : ''}Passes`}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
         </form>
       </div>
     </div>
