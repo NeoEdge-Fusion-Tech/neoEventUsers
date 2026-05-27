@@ -18,5 +18,8 @@ export const vendorService = {
   getAllSystemEvents: () => API.get('events/all/'), 
 
   getMyAssignments: () => API.get('events/vendors/my-assignments/'),
-  respondToInvite: (code, accept) => API.post(`events/invitations/${code}/respond/`, { accept })
+  respondToInvite: (code, accept) => API.post(`events/invitations/${code}/respond/`, { accept }),
+  uploadInvitedEventMedia: (assignmentId, data) => API.post(`events/vendors/assignments/${assignmentId}/media/`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
 };

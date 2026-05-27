@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { vendorService } from '../api/vendor';
-import { FolderPlus, Image as ImageIcon, Video, CalendarPlus, Loader2, Plus } from 'lucide-react';
+import { FolderPlus, Image as ImageIcon, Video, CalendarPlus, Loader2, Plus, UploadCloud } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
 
 const VendorDashboard = () => {
+  const { user } = useContext(AuthContext);
   const [categories, setCategories] = useState([]);
   const [events, setEvents] = useState([]);
   const [gallery, setGallery] = useState([]);
@@ -15,6 +17,17 @@ const VendorDashboard = () => {
   const [newEvent, setNewEvent] = useState({ category: '', system_event: '', name: '', location: '', date: '' });
   const [newMedia, setNewMedia] = useState({ event: '', file_type: 'IMAGE', caption: '' });
   const [selectedFile, setSelectedFile] = useState(null);
+  
+  const [invitedMediaFile, setInvitedMediaFile] = useState(null);
+  const [uploadingInvited, setUploadingInvited] = useState(false);
+  
+  const vendorSubtype = user?.vendor_profile?.subtype || '';
+  const isMediaVendor = vendorSubtype === 'PHOTOGRAPHER' || vendorSubtype === 'VIDEOGRAPHER';
+  
+  const tabs = ['assignments', 'categories', 'events', 'gallery'];
+  if (isMediaVendor) {
+    tabs.push('invited_events');
+  }
 
   useEffect(() => {
     fetchData();
@@ -102,6 +115,25 @@ const VendorDashboard = () => {
     }
   };
 
+  const handleUploadInvitedMedia = async (assignmentId) => {
+    if (!invitedMediaFile) return;
+    setUploadingInvited(true);
+    const formData = new FormData();
+    formData.append('raw_image', invitedMediaFile);
+    try {
+      await vendorService.uploadInvitedEventMedia(assignmentId, formData);
+      setInvitedMediaFile(null);
+      alert('Media uploaded successfully! It will be watermarked shortly.');
+      // Optionally re-fetch if we display the gallery here
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert('Error uploading media.');
+    } finally {
+      setUploadingInvited(false);
+    }
+  };
+
   if (loading) return <div style={styles.center}><Loader2 className="spinner" size={40} color="var(--primary)" /></div>;
 
   return (
@@ -109,13 +141,14 @@ const VendorDashboard = () => {
       <h1 style={styles.title}>Vendor Dashboard</h1>
       
       <div style={styles.tabs}>
-        {['assignments', 'categories', 'events', 'gallery'].map(tab => {
+        {tabs.map(tab => {
           const isActive = activeTab === tab;
           const labels = {
             assignments: 'Event Assignments',
             categories: 'Categories',
             events: 'Events',
-            gallery: 'Gallery'
+            gallery: 'Gallery',
+            invited_events: 'Invited Events (Upload)'
           };
           return (
             <button 
@@ -244,6 +277,48 @@ const VendorDashboard = () => {
                 <p style={{padding: '10px'}}>{g.caption || 'No caption'}</p>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'invited_events' && isMediaVendor && (
+        <div style={styles.section}>
+          <div className="glass" style={styles.card}>
+            <h2><UploadCloud size={20} style={{ marginRight: '10px' }} /> Upload to Assigned Events</h2>
+            <p style={{ color: 'var(--on-surface-variant)', marginBottom: '20px' }}>
+              As a {vendorSubtype.toLowerCase()}, you can upload raw media directly to the events you have accepted. 
+              The system will automatically apply a "PREVIEW ONLY" watermark to your images for event owners and attendees.
+            </p>
+            <div style={styles.list}>
+              {assignments.filter(a => a.is_confirmed).map(a => (
+                <div key={a.id} className="glass hover-card" style={styles.listItem}>
+                  <h3 style={{ fontSize: '1.2rem', marginBottom: '10px' }}>{a.event_title || `Event ID: ${a.event}`}</h3>
+                  <p style={{ color: 'var(--primary)', fontWeight: 600, marginBottom: '20px' }}>Role: {a.role_display}</p>
+                  
+                  <div style={{ padding: '15px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={e => setInvitedMediaFile(e.target.files[0])} 
+                        style={styles.input} 
+                      />
+                      <button 
+                        onClick={() => handleUploadInvitedMedia(a.id)}
+                        disabled={!invitedMediaFile || uploadingInvited}
+                        className="btn-primary" 
+                        style={{...styles.submitBtn, opacity: (!invitedMediaFile || uploadingInvited) ? 0.5 : 1}}
+                      >
+                        {uploadingInvited ? 'Uploading...' : 'Upload Watermarked Media'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {assignments.filter(a => a.is_confirmed).length === 0 && (
+                <p>You have no confirmed event assignments to upload to.</p>
+              )}
+            </div>
           </div>
         </div>
       )}
