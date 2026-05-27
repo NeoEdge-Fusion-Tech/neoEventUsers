@@ -1,22 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { User, Mail, Camera, Save, Loader2, ShieldCheck, Fingerprint, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 import api from '../api/axios';
-const getCurrentUser = () => {
-  const u = localStorage.getItem('user');
-  try { return u ? JSON.parse(u) : null; } catch(e) { return null; }
-};
+import { AuthContext } from '../context/AuthContext';
 
 const ProfileSettings = () => {
-  const [user, setUser] = useState(getCurrentUser());
+  const { user: authUser } = useContext(AuthContext);
+  const [user, setUser] = useState(authUser);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   
+  const getFullName = (u) => u ? (`${u.first_name || ''} ${u.last_name || ''}`.trim() || (u.username && !u.username.includes('@') ? u.username : '')) : '';
+
   const [formData, setFormData] = useState({
-    username: user?.username || '',
-    email: user?.email || '',
+    username: getFullName(authUser),
+    email: authUser?.email || '',
   });
+
+  useEffect(() => {
+    if (authUser) {
+      setUser(authUser);
+      setFormData({
+        username: getFullName(authUser),
+        email: authUser.email || '',
+      });
+    }
+  }, [authUser]);
+
   const [profileImage, setProfileImage] = useState(null);
   const [referenceImage, setReferenceImage] = useState(null);
 
@@ -73,7 +84,7 @@ const ProfileSettings = () => {
               <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '2rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Global Username</label>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Full Name</label>
                     <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
                       <User size={20} color="var(--primary)" />
                       <input 
@@ -85,7 +96,7 @@ const ProfileSettings = () => {
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Verified Email</label>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Email Address</label>
                     <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px', opacity: 0.6 }}>
                       <Mail size={20} color="var(--on-surface-variant)" />
                       <input 
@@ -147,7 +158,7 @@ const ProfileSettings = () => {
                       {referenceImage ? (
                         <>
                           <CheckCircle2 size={56} color="#22c55e" />
-                          <span style={{ fontSize: '1rem', fontWeight: 900, color: '#22c55e' }}>NEW SIGNATURE STAGED</span>
+                          <span style={{ fontSize: '1rem', fontWeight: 900, color: '#22c55e' }}>NEW PHOTO STAGED</span>
                           <span style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>{referenceImage.name}</span>
                         </>
                       ) : user?.reference_image ? (
@@ -155,7 +166,7 @@ const ProfileSettings = () => {
                       ) : (
                         <>
                           <ShieldCheck size={56} style={{ opacity: 0.2, color: 'var(--on-surface)' }} />
-                          <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--on-surface-variant)', opacity: 0.6 }}>NO SIGNATURE DETECTED</span>
+                          <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--on-surface-variant)', opacity: 0.6 }}>NO REFERENCE PHOTO</span>
                         </>
                       )}
                       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.5), transparent)', opacity: 0.4 }}></div>
@@ -163,14 +174,12 @@ const ProfileSettings = () => {
                     </div>
                     <label htmlFor="ref-img" style={{ display: 'block', marginTop: '1.5rem' }}>
                       <div className="glass" style={{ padding: '1.2rem', borderRadius: '18px', textAlign: 'center', fontWeight: 900, cursor: 'pointer', background: 'var(--accent-glow)', color: 'var(--on-surface)', border: '1px solid var(--primary)', fontSize: '0.95rem' }}>
-                        {referenceImage ? 'CHANGE STAGED SIGNATURE' : 'UPDATE BIOMETRIC REF'}
+                        {referenceImage ? 'CHANGE STAGED PHOTO' : 'UPLOAD REFERENCE PHOTO'}
                       </div>
                     </label>
                  </div>
 
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', color: 'var(--on-surface-variant)', fontSize: '0.9rem', fontWeight: 700, opacity: 0.7 }}>
-                    <Lock size={18} /> DATA IS END-TO-END ENCRYPTED
-                 </div>
+
               </div>
             </div>
           </aside>

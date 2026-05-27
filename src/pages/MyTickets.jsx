@@ -5,7 +5,9 @@ import { formatDateRange } from '../utils/dateUtils';
 import { useNavigate } from 'react-router-dom';
 
 const MyTickets = () => {
-  const [registrations, setRegistrations] = useState([]);
+  const [upcomingRegistrations, setUpcomingRegistrations] = useState([]);
+  const [pastRegistrations, setPastRegistrations] = useState([]);
+  const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' or 'past'
   const [photoCount, setPhotoCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -13,12 +15,23 @@ const MyTickets = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [regRes, countRes] = await Promise.all([
-          api.get('/registrations/'),
-          api.get('/photos/stats/count/')
+        const [upcomingRes, pastRes, countRes] = await Promise.all([
+          api.get('/attendee/events/upcoming/').catch(() => ({ data: { results: [] } })),
+          api.get('/attendee/events/history/').catch(() => ({ data: { results: [] } })),
+          api.get('/photos/stats/count/').catch(() => ({ data: { count: 0 } }))
         ]);
-        setRegistrations(regRes.data);
-        setPhotoCount(countRes.data.count);
+        
+        const upcoming = upcomingRes.data.results || upcomingRes.data || [];
+        const past = pastRes.data.results || pastRes.data || [];
+        
+        setUpcomingRegistrations(upcoming);
+        setPastRegistrations(past);
+        setPhotoCount(countRes.data.count || 0);
+        
+        // Auto-switch to past tab if there are no upcoming events but there are past events
+        if (upcoming.length === 0 && past.length > 0) {
+          setActiveTab('past');
+        }
       } catch (err) {
         console.error('Failed to fetch data', err);
       } finally {
@@ -39,32 +52,59 @@ const MyTickets = () => {
       <header style={{ marginBottom: '5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <span style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '3px' }}>Identity & Access</span>
-          <h1 style={{ fontSize: '4.5rem', marginBottom: '0.5rem', fontWeight: 900, letterSpacing: '-2px' }}>Personal <span style={{ color: 'var(--primary)' }}>Vault</span></h1>
-          <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.2rem', fontWeight: 500 }}>Global access credentials and biometric memory archives.</p>
+          <h1 style={{ fontSize: '4.5rem', marginBottom: '0.5rem', fontWeight: 900, letterSpacing: '-2px' }}>My <span style={{ color: 'var(--primary)' }}>Tickets</span></h1>
+          <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.2rem', fontWeight: 500 }}>Manage your events and access credentials.</p>
         </div>
-        <div className="glass" style={{ padding: '2rem 3.5rem', borderRadius: '32px', textAlign: 'right', border: '1px solid var(--primary)' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 800, letterSpacing: '2px' }}>ACTIVE CREDENTIALS</div>
-          <div style={{ fontSize: '3rem', fontWeight: 900, color: 'var(--on-surface)' }}>{registrations.length}</div>
+        <div className="glass" style={{ padding: '2rem 3.5rem', borderRadius: '32px', textAlign: 'center', border: '1px solid var(--primary)' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 800, letterSpacing: '2px' }}>PHOTOS OF ME</div>
+          <div style={{ fontSize: '3rem', fontWeight: 900, color: 'var(--on-surface)' }}>{photoCount}</div>
         </div>
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '5rem' }}>
         <section>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '3rem' }}>
-            <div style={{ width: '40px', height: '3px', background: 'var(--primary)', borderRadius: '2px' }}></div>
-            <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.5px' }}>DIGITAL PASSES</h2>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ width: '40px', height: '3px', background: 'var(--primary)', borderRadius: '2px' }}></div>
+              <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.5px' }}>MY TICKETS</h2>
+            </div>
+            
+            <div className="glass" style={{ display: 'flex', padding: '0.4rem', borderRadius: '50px' }}>
+              <button 
+                onClick={() => setActiveTab('upcoming')}
+                style={{ 
+                  padding: '0.6rem 1.5rem', borderRadius: '50px', border: 'none', 
+                  background: activeTab === 'upcoming' ? 'var(--primary)' : 'transparent',
+                  color: activeTab === 'upcoming' ? 'var(--on-primary)' : 'var(--on-surface-variant)',
+                  fontWeight: 700, cursor: 'pointer'
+                }}
+              >
+                Upcoming Events
+              </button>
+              <button 
+                onClick={() => setActiveTab('past')}
+                style={{ 
+                  padding: '0.6rem 1.5rem', borderRadius: '50px', border: 'none', 
+                  background: activeTab === 'past' ? 'var(--primary)' : 'transparent',
+                  color: activeTab === 'past' ? 'var(--on-primary)' : 'var(--on-surface-variant)',
+                  fontWeight: 700, cursor: 'pointer'
+                }}
+              >
+                Past Events
+              </button>
+            </div>
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            {registrations.length === 0 ? (
+            {(activeTab === 'upcoming' ? upcomingRegistrations : pastRegistrations).length === 0 ? (
               <div className="glass" style={{ padding: '8rem', textAlign: 'center', borderRadius: '40px' }}>
                 <Ticket size={72} style={{ opacity: 0.1, marginBottom: '2.5rem', color: 'var(--on-surface)' }} />
-                <h3 style={{ fontSize: '2rem', marginBottom: '1.2rem', fontWeight: 900 }}>Vault Empty</h3>
-                <p style={{ color: 'var(--on-surface-variant)', maxWidth: '400px', margin: '0 auto', fontSize: '1.1rem' }}>You have not secured access to any live masterpieces yet. Explore the repository to acquire your first pass.</p>
+                <h3 style={{ fontSize: '2rem', marginBottom: '1.2rem', fontWeight: 900 }}>No Tickets Found</h3>
+                <p style={{ color: 'var(--on-surface-variant)', maxWidth: '400px', margin: '0 auto', fontSize: '1.1rem' }}>You haven't registered for any events yet. Explore our events to find your next experience!</p>
                 <button onClick={() => navigate('/')} className="btn-primary" style={{ marginTop: '3rem', padding: '1.2rem 4rem', borderRadius: '18px', fontSize: '1rem' }}>DISCOVER EVENTS</button>
               </div>
             ) : (
-              registrations.map(reg => (
+              (activeTab === 'upcoming' ? upcomingRegistrations : pastRegistrations).map(reg => (
                 <div key={reg.id} className="glass hover-card" style={{ display: 'flex', borderRadius: '40px', overflow: 'hidden', height: '240px' }}>
                   <div style={{ width: '260px', position: 'relative' }}>
                     <img src={reg.event_banner || '/placeholder.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -142,9 +182,9 @@ const MyTickets = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--primary)', boxShadow: '0 0 10px var(--primary)' }}></div>
-                   <span style={{ color: 'var(--on-surface-variant)', fontWeight: 700, fontSize: '1.1rem' }}>Active Portals</span>
+                   <span style={{ color: 'var(--on-surface-variant)', fontWeight: 700, fontSize: '1.1rem' }}>Upcoming Events</span>
                 </div>
-                <span style={{ fontWeight: 900, fontSize: '1.8rem', color: 'var(--on-surface)' }}>{registrations.filter(r => r.is_event_active).length}</span>
+                <span style={{ fontWeight: 900, fontSize: '1.8rem', color: 'var(--on-surface)' }}>{upcomingRegistrations.length}</span>
               </div>
             </div>
           </div>

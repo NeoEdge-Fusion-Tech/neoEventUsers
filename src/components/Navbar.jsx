@@ -56,7 +56,7 @@ const Navbar = () => {
         {/* Attendee Links */}
         {user && user.role === 'ATTENDEE' && (
           <>
-            <NavItem to="/tickets" label="My Tickets" icon={Ticket} />
+            <NavItem to="/tickets" label="Dashboard" icon={Ticket} />
           </>
         )}
 

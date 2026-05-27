@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { authService } from '../api/auth';
+import { vendorService } from '../api/vendor';
 import { User, Mail, Lock, Phone, Camera, Loader2, ArrowLeft } from 'lucide-react';
 import { getNames } from 'country-list';
 
@@ -18,6 +19,22 @@ const Signup = () => {
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [vendorTypes, setVendorTypes] = useState([]);
+  const [customType, setCustomType] = useState('');
+
+  useEffect(() => {
+    if (type === 'vendor') {
+      const fetchTypes = async () => {
+        try {
+          const res = await vendorService.getVendorTypes();
+          setVendorTypes(res.data || []);
+        } catch (err) {
+          console.error("Failed to fetch vendor types", err);
+        }
+      };
+      fetchTypes();
+    }
+  }, [type]);
 
   const handleChange = (e) => {
     const { name, value, type: inputType, checked } = e.target;
@@ -34,7 +51,11 @@ const Signup = () => {
 
     try {
       if (type === 'vendor') {
-        await authService.registerVendor(formData);
+        const payload = { ...formData };
+        if (payload.vendor_subtype === 'OTHER' && customType) {
+          payload.vendor_subtype = customType;
+        }
+        await authService.registerVendor(payload);
       } else if (type === 'attendee') {
         const {
           vendor_subtype, business_name, is_registered, registration_number,
@@ -117,14 +138,23 @@ const Signup = () => {
                 </div>
                 <div style={styles.field}>
                   <label style={styles.label}>Service Type</label>
-                  <select name="vendor_subtype" onChange={handleChange} style={styles.input}>
-                    <option value="PHOTOGRAPHER">Photographer</option>
-                    <option value="VIDEOGRAPHER">Videographer</option>
-                    <option value="DECORATOR">Decorator</option>
-                    <option value="CATERER">Caterer</option>
+                  <select name="vendor_subtype" onChange={handleChange} style={styles.input} value={formData.vendor_subtype}>
+                    {vendorTypes.map(vt => (
+                      <option key={vt} value={vt}>{vt.replace('_', ' ')}</option>
+                    ))}
+                    <option value="OTHER">Others (Specify)</option>
                   </select>
                 </div>
               </div>
+              
+              {formData.vendor_subtype === 'OTHER' && (
+                <div style={styles.inputRow}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Specify Service Type</label>
+                    <input name="customType" placeholder="e.g. DJ, Florist" value={customType} onChange={e => setCustomType(e.target.value)} required style={styles.input} />
+                  </div>
+                </div>
+              )}
 
               <div style={styles.inputRow}>
                 <div style={styles.field}>
@@ -153,26 +183,28 @@ const Signup = () => {
                 </div>
               )}
 
-              <div style={styles.field}>
-                <label style={styles.label}>Address</label>
-                <input name="address" onChange={handleChange} required style={styles.input} />
+              <div style={styles.inputRow}>
+                <div style={styles.field}>
+                  <label style={styles.label}>Address</label>
+                  <input name="address" onChange={handleChange} required style={styles.input} />
+                </div>
+                <div style={styles.field}>
+                  <label style={styles.label}>City</label>
+                  <input name="city" onChange={handleChange} required style={styles.input} />
+                </div>
               </div>
 
               <div style={styles.inputRow}>
+                <div style={styles.field}>
+                  <label style={styles.label}>State/County</label>
+                  <input name="state_or_county" onChange={handleChange} required style={styles.input} />
+                </div>
                 <div style={styles.field}>
                   <label style={styles.label}>Country</label>
                   <select name="country" onChange={handleChange} required style={styles.input} value={formData.country}>
                     <option value="" disabled>Select a country</option>
                     {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
-                </div>
-                <div style={styles.field}>
-                  <label style={styles.label}>State/County</label>
-                  <input name="state_or_county" onChange={handleChange} required style={styles.input} />
-                </div>
-                <div style={styles.field}>
-                  <label style={styles.label}>City</label>
-                  <input name="city" onChange={handleChange} required style={styles.input} />
                 </div>
               </div>
             </>

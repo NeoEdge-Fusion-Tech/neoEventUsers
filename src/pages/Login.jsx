@@ -23,8 +23,16 @@ const LoginPage = () => {
     setError('');
     
     try {
-      await login(formData);
-      navigate(from, { replace: true });
+      const data = await login(formData);
+      
+      let redirectPath = from;
+      if (from === "/") {
+         if (data?.user?.role === 'ATTENDEE') redirectPath = '/tickets';
+         else if (data?.user?.role === 'OWNER') redirectPath = '/owner/dashboard';
+         else if (data?.user?.role === 'VENDOR') redirectPath = '/vendor/dashboard';
+      }
+      
+      navigate(redirectPath, { replace: true });
     } catch (err) {
       // Catch 401s or Throttling (429) errors
       const message = err.response?.data?.detail || 

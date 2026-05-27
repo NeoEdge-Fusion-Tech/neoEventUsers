@@ -43,7 +43,7 @@ const Registration = () => {
   // Group states
   const [groupName, setGroupName] = useState('');
   const [groupMembers, setGroupMembers] = useState([
-    { first_name: '', last_name: '', email: '', phone_number: '' }
+    { first_name: '', last_name: '', email: '', phone_number: '', reference_image: null }
   ]);
 
   const [referenceImage, setReferenceImage] = useState(null);
@@ -82,7 +82,7 @@ const Registration = () => {
   }, [eventId]);
 
   const handleAddMember = () => {
-    setGroupMembers([...groupMembers, { first_name: '', last_name: '', email: '', phone_number: '' }]);
+    setGroupMembers([...groupMembers, { first_name: '', last_name: '', email: '', phone_number: '', reference_image: null }]);
   };
 
   const handleRemoveMember = (idx) => {
@@ -120,6 +120,13 @@ const Registration = () => {
         phone_number: m.phone_number
       }));
       form.append('attendees', JSON.stringify(mappedMembers));
+      
+      // Append images for group members
+      groupMembers.forEach((m, idx) => {
+        if (m.reference_image) {
+          form.append(`reference_image_${idx}`, m.reference_image);
+        }
+      });
     } else {
       form.append('full_name', `${formData.first_name} ${formData.last_name}`.trim());
       form.append('email', formData.email);
@@ -231,6 +238,33 @@ const Registration = () => {
             </div>
           </div>
         </div>
+
+        {/* Event Vendors Section */}
+        {event.vendors && event.vendors.length > 0 && (
+          <div style={{ marginTop: '4.5rem' }}>
+            <h3 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '2rem', letterSpacing: '-0.5px' }}>Event Vendors</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+              {event.vendors.map(v => (
+                <div key={v.id} className="glass" style={{ padding: '2rem', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid rgba(255,255,255,0.05)', background: 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)' }}>
+                  <div>
+                    <h4 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '0.2rem' }}>{v.vendor_name}</h4>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>{v.role}</span>
+                  </div>
+                  {v.is_onboarded && v.vendor_id ? (
+                    <button 
+                      onClick={() => navigate(`/vendor/profile/${v.vendor_id}`)}
+                      style={{ background: 'rgba(255, 177, 115, 0.1)', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.8rem 1rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 800, fontSize: '0.85rem', transition: 'all 0.2s ease', marginTop: '0.5rem' }}
+                    >
+                      View Profile
+                    </button>
+                  ) : (
+                    <div style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', fontWeight: 600, marginTop: '0.5rem', fontStyle: 'italic' }}>Profile not available</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Ticket Purchase Interactive Module */}
@@ -448,42 +482,78 @@ const Registration = () => {
                         style={styles.inputPlain} 
                       />
                     </div>
+                    {/* Selfie Signature for group member */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <label style={{ ...styles.label, fontSize: '0.7rem' }}>Selfie Signature (Optional)</label>
+                      <div className="glass" style={{ ...styles.dropzone, height: '80px', borderRadius: '12px' }}>
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => handleMemberChange(idx, 'reference_image', e.target.files[0])}
+                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                        />
+                        {m.reference_image ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <CheckCircle size={20} color="#22c55e" />
+                            <span style={{ fontSize: '0.8rem', color: '#fff', fontWeight: 600 }}>{m.reference_image.name}</span>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Camera size={20} color="var(--primary)" />
+                            <span style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>Upload signature</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
             </>
           )}
 
-          {/* Selfie Reference (Biometrics consent) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            <label style={styles.label}>Selfie Signature (Optional)</label>
-            <div className="glass" style={styles.dropzone}>
-              <input 
-                type="file" 
-                accept="image/*"
-                onChange={(e) => setReferenceImage(e.target.files[0])}
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-              />
-              {referenceImage ? (
-                <>
-                  <CheckCircle size={28} color="#22c55e" />
-                  <span style={{ fontSize: '0.9rem', color: '#fff', fontWeight: 600 }}>{referenceImage.name}</span>
-                </>
-              ) : (
-                <>
-                  <Camera size={32} color="var(--primary)" />
-                  <span style={{ fontSize: '0.9rem', color: 'var(--on-surface-variant)' }}>Click to upload selfie signature</span>
-                </>
-              )}
-            </div>
-          </div>
+          {/* Global Selfie Reference (Only for individual) */}
+          {purchaseType === 'individual' && (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <label style={styles.label}>Selfie Signature (Optional)</label>
+                <div className="glass" style={styles.dropzone}>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => setReferenceImage(e.target.files[0])}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                  />
+                  {referenceImage ? (
+                    <>
+                      <CheckCircle size={28} color="#22c55e" />
+                      <span style={{ fontSize: '0.9rem', color: '#fff', fontWeight: 600 }}>{referenceImage.name}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera size={32} color="var(--primary)" />
+                      <span style={{ fontSize: '0.9rem', color: 'var(--on-surface-variant)' }}>Click to upload selfie signature</span>
+                    </>
+                  )}
+                </div>
+              </div>
 
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginTop: '1rem' }}>
-            <input type="checkbox" required={!!referenceImage} style={{ marginTop: '0.4rem', width: '18px', height: '18px' }} />
-            <p style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', fontWeight: 600 }}>
-              I authorize NeoEvent to process reference images to deliver AI event photos directly to my portfolio vault. {!!referenceImage && <span style={{ color: 'var(--primary)' }}>*</span>}
-            </p>
-          </div>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginTop: '1rem' }}>
+                <input type="checkbox" required={!!referenceImage} style={{ marginTop: '0.4rem', width: '18px', height: '18px' }} />
+                <p style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', fontWeight: 600 }}>
+                  I authorize NeoEvent to process reference images to deliver AI event photos directly to my portfolio vault. {!!referenceImage && <span style={{ color: 'var(--primary)' }}>*</span>}
+                </p>
+              </div>
+            </>
+          )}
+          
+          {purchaseType === 'group' && groupMembers.some(m => m.reference_image) && (
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginTop: '1rem' }}>
+              <input type="checkbox" required={true} style={{ marginTop: '0.4rem', width: '18px', height: '18px' }} />
+              <p style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', fontWeight: 600 }}>
+                I authorize NeoEvent to process reference images to deliver AI event photos directly to our portfolio vaults. <span style={{ color: 'var(--primary)' }}>*</span>
+              </p>
+            </div>
+          )}
 
           <motion.button 
             whileHover={!registering && selectedTicket ? { scale: 1.02 } : {}}

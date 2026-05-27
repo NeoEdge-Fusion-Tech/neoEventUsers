@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, MapPin, Ticket, Camera, Info, Loader2, ArrowLeft, Download, Image as ImageIcon } from 'lucide-react';
+import { Calendar, MapPin, Ticket, Camera, Info, Loader2, ArrowLeft, Download, Image as ImageIcon, CreditCard } from 'lucide-react';
 import api from '../api';
 import { formatDateRange } from '../utils/dateUtils';
 
@@ -19,7 +19,7 @@ const EventConsole = () => {
         setRegistration(regRes.data);
         
         // Fetch photos for this event
-        const photoRes = await api.get(`/photos/gallery/?event_id=${regRes.data.event}&category=${galleryCategory}`);
+        const photoRes = await api.get(`/photos/gallery/?event_id=${regRes.data.event_id}&category=${galleryCategory}`);
         setPhotos(photoRes.data.results || photoRes.data);
       } catch (err) {
         console.error('Failed to fetch console data', err);
@@ -42,8 +42,8 @@ const EventConsole = () => {
         gap: '0.8rem',
         padding: '1rem 2rem',
         border: 'none',
-        background: activeTab === id ? 'var(--primary-container)' : 'transparent',
-        color: activeTab === id ? 'var(--primary)' : 'var(--on-surface-variant)',
+        background: activeTab === id ? 'var(--primary)' : 'transparent',
+        color: activeTab === id ? 'var(--on-primary)' : 'var(--on-surface-variant)',
         borderRadius: '12px',
         fontWeight: 700,
         cursor: 'pointer',
@@ -62,7 +62,7 @@ const EventConsole = () => {
 
       <div className="glass" style={{ borderRadius: '32px', overflow: 'hidden', marginBottom: '3rem' }}>
         <div style={{ height: '300px', position: 'relative' }}>
-          <img src={registration.event_banner || '/event-banner.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={registration.banner_image || '/event-banner.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', padding: '3rem', background: 'linear-gradient(to top, rgba(13, 17, 23, 0.9), transparent)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
               <span style={{ color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '2px', fontSize: '0.8rem' }}>Event Hub</span>
@@ -77,6 +77,7 @@ const EventConsole = () => {
         <div style={{ display: 'flex', padding: '1rem', borderBottom: '1px solid var(--surface-highest)', gap: '1rem', background: 'rgba(255, 255, 255, 0.02)' }}>
           <TabButton id="overview" label="Overview" icon={Info} />
           <TabButton id="ticket" label="My Ticket" icon={Ticket} />
+          <TabButton id="payment" label="Payment History" icon={CreditCard} />
           <TabButton id="gallery" label="Photo Gallery" icon={Camera} />
         </div>
 
@@ -92,19 +93,19 @@ const EventConsole = () => {
                    <div style={{ background: 'var(--surface-highest)', padding: '1.5rem', borderRadius: '16px', flex: 1 }}>
                      <MapPin size={24} color="var(--primary)" style={{ marginBottom: '1rem' }} />
                      <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', fontWeight: 600 }}>LOCATION</div>
-                     <div style={{ fontWeight: 700 }}>{registration.event_location}</div>
+                     <div style={{ fontWeight: 700 }}>{[registration.venue_name, registration.venue_address].filter(Boolean).join(', ')}</div>
                    </div>
                    <div style={{ background: 'var(--surface-highest)', padding: '1.5rem', borderRadius: '16px', flex: 1 }}>
                      <Calendar size={24} color="var(--primary)" style={{ marginBottom: '1rem' }} />
                      <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', fontWeight: 600 }}>DURATION</div>
-                     <div style={{ fontWeight: 700 }}>{formatDateRange(registration.event_start_date, registration.event_end_date)}</div>
+                     <div style={{ fontWeight: 700 }}>{formatDateRange(registration.start_date, registration.end_date)}</div>
                    </div>
                 </div>
               </div>
               <div className="glass" style={{ padding: '2rem', borderRadius: '24px', textAlign: 'center' }}>
                 <Ticket size={40} color="var(--primary)" style={{ marginBottom: '1rem' }} />
                 <h4 style={{ marginBottom: '1rem' }}>Ticketing ID</h4>
-                <div style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'monospace', color: 'var(--primary)' }}>{registration.ticket?.ticket_id.split('-')[0].toUpperCase()}</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'monospace', color: 'var(--primary)' }}>{registration.registration_code}</div>
                 <button 
                   onClick={() => setActiveTab('ticket')}
                   className="btn-primary" 
@@ -119,14 +120,14 @@ const EventConsole = () => {
           {activeTab === 'ticket' && (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem 0' }}>
               <div className="glass" style={{ width: '100%', maxWidth: '450px', borderRadius: '32px', overflow: 'hidden', background: '#fff', color: '#000' }}>
-                <div style={{ background: 'var(--primary)', color: '#fff', padding: '2rem', textAlign: 'center' }}>
+                <div style={{ background: 'var(--primary)', color: 'var(--on-primary)', padding: '2rem', textAlign: 'center' }}>
                   <h3 style={{ textTransform: 'uppercase', letterSpacing: '2px', fontSize: '0.9rem' }}>Official Event Passport</h3>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 900, marginTop: '0.5rem' }}>NEO EVENT</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 900, marginTop: '0.5rem' }}>{registration.event_title}</div>
                 </div>
                 <div style={{ padding: '3rem', textAlign: 'center' }}>
-                  <div style={{ width: '250px', height: '250px', margin: '0 auto 2rem', background: '#f5f5f5', borderRadius: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    {registration.ticket?.qr_code ? (
-                      <img src={registration.ticket.qr_code} alt="QR Code" style={{ width: '90%', height: '90%' }} />
+                  <div style={{ width: '250px', height: '250px', margin: '0 auto 2rem', background: '#f5f5f5', borderRadius: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+                    {registration.qr_code ? (
+                      <img src={registration.qr_code} alt="QR Code" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
                       <Ticket size={80} color="#ddd" />
                     )}
@@ -134,16 +135,63 @@ const EventConsole = () => {
                   <div style={{ borderTop: '2px dashed #eee', padding: '2rem 0', textAlign: 'left' }}>
                     <div style={{ marginBottom: '1rem' }}>
                       <div style={{ fontSize: '0.75rem', color: '#888', fontWeight: 700 }}>ATTENDEE</div>
-                      <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{registration.user_name || 'VIP Guest'}</div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{registration.attendee_name || 'VIP Guest'}</div>
                     </div>
                     <div>
                       <div style={{ fontSize: '0.75rem', color: '#888', fontWeight: 700 }}>EVENT PORTAL ACCESS ID</div>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>{registration.ticket?.ticket_id}</div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>{registration.registration_code}</div>
                     </div>
                   </div>
                   <button className="btn-primary" style={{ width: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.8rem' }}>
                     <Download size={20} /> Download for Apple Wallet
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'payment' && (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem 0' }}>
+              <div className="glass" style={{ width: '100%', maxWidth: '700px', borderRadius: '32px', padding: '3rem' }}>
+                <h3 style={{ fontSize: '1.8rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <CreditCard color="var(--primary)" /> Payment History
+                </h3>
+                
+                <div style={{ background: 'var(--surface-highest)', borderRadius: '16px', padding: '2rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '1.5rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.3rem' }}>Transaction ID</div>
+                      <div style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--on-surface-variant)' }}>{registration.id.split('-').pop()}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.3rem' }}>Date</div>
+                      <div style={{ fontWeight: 700 }}>{new Date(registration.registered_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{registration.ticket_type_name}</div>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--on-surface-variant)' }}>Event Ticket</div>
+                    </div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)' }}>
+                       {parseFloat(registration.ticket_price) === 0 ? 'FREE' : `${registration.event_currency || 'USD'} ${registration.ticket_price}`}
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px dashed var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <span style={{ fontWeight: 700 }}>Status</span>
+                     <span style={{ 
+                       padding: '0.4rem 1rem', 
+                       borderRadius: '50px', 
+                       background: 'rgba(34, 197, 94, 0.1)', 
+                       color: '#22c55e', 
+                       fontWeight: 800, 
+                       fontSize: '0.85rem' 
+                     }}>
+                       SUCCESSFUL
+                     </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -163,7 +211,7 @@ const EventConsole = () => {
                       borderRadius: '50px', 
                       border: 'none', 
                       background: galleryCategory === 'personal' ? 'var(--primary)' : 'transparent',
-                      color: galleryCategory === 'personal' ? '#fff' : 'var(--on-surface-variant)',
+                      color: galleryCategory === 'personal' ? 'var(--on-primary)' : 'var(--on-surface-variant)',
                       fontWeight: 700,
                       cursor: 'pointer'
                     }}
@@ -177,7 +225,7 @@ const EventConsole = () => {
                       borderRadius: '50px', 
                       border: 'none', 
                       background: galleryCategory === 'public' ? 'var(--primary)' : 'transparent',
-                      color: galleryCategory === 'public' ? '#fff' : 'var(--on-surface-variant)',
+                      color: galleryCategory === 'public' ? 'var(--on-primary)' : 'var(--on-surface-variant)',
                       fontWeight: 700,
                       cursor: 'pointer'
                     }}

@@ -1,6 +1,7 @@
 import API from './axios';
 
 export const vendorService = {
+  getVendorTypes: () => API.get('events/vendors/types/'),
   getCategories: () => API.get('vendors/categories/'),
   createCategory: (data) => API.post('vendors/categories/', data),
   

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  Camera, Mail, Plus, Loader2, ArrowLeft, CheckCircle, Clock, 
-  ShieldCheck, UserPlus, Info, Calendar, MapPin, Search, Ticket, 
+import {
+  Camera, Mail, Plus, Loader2, ArrowLeft, CheckCircle, Clock,
+  ShieldCheck, UserPlus, Info, Calendar, MapPin, Search, Ticket,
   DollarSign, Check, X, FileText, Group, User, Briefcase, Edit, Trash2, Save
 } from 'lucide-react';
 import api from '../api/axios';
+import { vendorService } from '../api/vendor';
 
 const getCurrencySymbol = (code) => {
   switch (code) {
@@ -24,11 +25,15 @@ const OrganizerEventDetails = () => {
   const [loading, setLoading] = useState(true);
   const [regsLoading, setRegsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('participants'); // 'participants' or 'vendors'
-  
+
+  const [vendorTypes, setVendorTypes] = useState([]);
+
   // Vendor Invite Form
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
+  const [invitePhone, setInvitePhone] = useState('');
   const [inviteRole, setInviteRole] = useState('PHOTOGRAPHER');
+  const [customInviteRole, setCustomInviteRole] = useState('');
   const [inviting, setInviting] = useState(false);
   const [invitationError, setInvitationError] = useState('');
 
@@ -37,7 +42,8 @@ const OrganizerEventDetails = () => {
   const [checkInFilter, setCheckInFilter] = useState('ALL');
   const [checkedInDateFilter, setCheckedInDateFilter] = useState('ALL');
   const [selectedHistoryUser, setSelectedHistoryUser] = useState(null);
-  
+  const [expandedVendorId, setExpandedVendorId] = useState(null);
+
   // Admin Check-in Modal
   const [adminCheckInTarget, setAdminCheckInTarget] = useState(null);
   const [adminCheckInDate, setAdminCheckInDate] = useState('');
@@ -56,7 +62,17 @@ const OrganizerEventDetails = () => {
   useEffect(() => {
     fetchEventData();
     fetchRegistrations();
+    fetchVendorTypes();
   }, [eventId]);
+
+  const fetchVendorTypes = async () => {
+    try {
+      const res = await vendorService.getVendorTypes();
+      setVendorTypes(res.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const initEditForm = (ev) => {
     setEditForm({
@@ -66,10 +82,10 @@ const OrganizerEventDetails = () => {
       venue_address: ev.venue_address || '',
       country: ev.country || '',
       state_or_county: ev.state_or_county || '',
-      start_date: ev.start_date ? ev.start_date.slice(0,16) : '',
-      end_date: ev.end_date ? ev.end_date.slice(0,16) : '',
-      registration_start: ev.registration_start ? ev.registration_start.slice(0,16) : '',
-      registration_deadline: ev.registration_deadline ? ev.registration_deadline.slice(0,16) : '',
+      start_date: ev.start_date ? ev.start_date.slice(0, 16) : '',
+      end_date: ev.end_date ? ev.end_date.slice(0, 16) : '',
+      registration_start: ev.registration_start ? ev.registration_start.slice(0, 16) : '',
+      registration_deadline: ev.registration_deadline ? ev.registration_deadline.slice(0, 16) : '',
       max_participants: ev.max_participants || 100,
       currency: ev.currency || 'USD',
     });
@@ -108,24 +124,31 @@ const OrganizerEventDetails = () => {
     setInviting(true);
     setInvitationError('');
     try {
+      let finalRole = inviteRole;
+      if (inviteRole === 'OTHER' && customInviteRole) {
+        finalRole = customInviteRole;
+      }
       await api.post(`/events/${eventId}/vendors/invite/`, {
         vendor_email: inviteEmail,
         vendor_name: inviteName,
-        role: inviteRole
+        vendor_phone: invitePhone,
+        role: finalRole
       });
       setInviteEmail('');
       setInviteName('');
+      setInvitePhone('');
       setInviteRole('PHOTOGRAPHER');
+      setCustomInviteRole('');
       // Refresh event details
       fetchEventData();
     } catch (err) {
-      const errorMsg = err.response?.data?.vendor_email?.[0] || 
-                       err.response?.data?.vendor_name?.[0] || 
-                       err.response?.data?.role?.[0] ||
-                       err.response?.data?.non_field_errors?.[0] ||
-                       err.response?.data?.[0] ||
-                       err.response?.data?.detail ||
-                       'Failed to send invite. Verify email is a valid vendor.';
+      const errorMsg = err.response?.data?.vendor_email?.[0] ||
+        err.response?.data?.vendor_name?.[0] ||
+        err.response?.data?.role?.[0] ||
+        err.response?.data?.non_field_errors?.[0] ||
+        err.response?.data?.[0] ||
+        err.response?.data?.detail ||
+        'Failed to send invite. Verify email is a valid vendor.';
       setInvitationError(errorMsg);
       console.error(err);
     } finally {
@@ -173,7 +196,7 @@ const OrganizerEventDetails = () => {
   const handleAdminCheckIn = async (e) => {
     e.preventDefault();
     if (!adminCheckInTarget || !adminCheckInDate) return;
-    
+
     try {
       await api.post(`/check-in/${adminCheckInTarget.registration_code}/`, {
         device_id: 'admin',
@@ -209,7 +232,7 @@ const OrganizerEventDetails = () => {
     const days = event.number_of_days || 1;
     const startDate = new Date(event.start_date);
     const dateList = [];
-    
+
     for (let i = 0; i < days; i++) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + i);
@@ -218,7 +241,7 @@ const OrganizerEventDetails = () => {
       const day = String(d.getDate()).padStart(2, '0');
       const dateString = `${year}-${month}-${day}`;
       const weekday = d.toLocaleDateString(undefined, { weekday: 'short' });
-      
+
       dateList.push({
         value: dateString,
         label: `Day ${i + 1} (${dateString}, ${weekday})`
@@ -226,7 +249,7 @@ const OrganizerEventDetails = () => {
     }
     return dateList;
   };
-  
+
   const eventDays = getEventDaysList();
 
   // Given a YYYY-MM-DD date string, compute Day N, weekday, formatted date
@@ -249,25 +272,11 @@ const OrganizerEventDetails = () => {
     return eventDays.filter(d => !checkedDates.has(d.value));
   };
 
-  const filteredCheckedInAttendees = registrations.filter(r => {
-    if (!r.checked_in) return false;
-    if (checkedInDateFilter !== 'ALL') {
-      const hasCheckedInOnDate = (r.checkin_history || []).some(ch => ch.date === checkedInDateFilter);
-      if (!hasCheckedInOnDate) return false;
-    }
-    
-    const query = (searchQuery || '').toLowerCase();
-    const name = (r.attendee_name_display || '').toLowerCase();
-    const email = (r.attendee_email_display || '').toLowerCase();
-    const ticket = (r.ticket_type_name || '').toLowerCase();
-    return name.includes(query) || email.includes(query) || ticket.includes(query);
-  });
-
   const handleExport = async () => {
     try {
       const type = activeTab === 'participants' ? 'registrations' : 'daily_checkins';
       let endpoint = `/events/${eventId}/export/?type=${type}`;
-      
+
       if (type === 'daily_checkins' && checkedInDateFilter !== 'ALL') {
         endpoint += `&date=${checkedInDateFilter}`;
       } else if (type === 'registrations' && checkInFilter !== 'ALL') {
@@ -287,6 +296,20 @@ const OrganizerEventDetails = () => {
       alert('Failed to export data.');
     }
   };
+
+  const filteredCheckedInAttendees = registrations.filter(r => {
+    if (!r.checked_in) return false;
+    if (checkedInDateFilter !== 'ALL') {
+      const hasCheckedInOnDate = (r.checkin_history || []).some(ch => ch.date === checkedInDateFilter);
+      if (!hasCheckedInOnDate) return false;
+    }
+
+    const query = (searchQuery || '').toLowerCase();
+    const name = (r.attendee_name_display || '').toLowerCase();
+    const email = (r.attendee_email_display || '').toLowerCase();
+    const ticket = (r.ticket_type_name || '').toLowerCase();
+    return name.includes(query) || email.includes(query) || ticket.includes(query);
+  });
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '10rem' }}><Loader2 className="animate-spin" size={48} color="var(--primary)" /></div>;
   if (!event) return <div style={{ textAlign: 'center', padding: '10rem' }}>Event not found.</div>;
@@ -353,12 +376,11 @@ const OrganizerEventDetails = () => {
         </div>
       </div>
 
-      {/* Tabs switching */}
       <div style={styles.tabs}>
         {[
-          ['participants', `Participants (${registrations.length})`], 
+          ['participants', `Participants (${registrations.length})`],
           ['checked_in', `Checked In Attendee (${checkedInCount})`],
-          ['vendors', `Vendors (${(event.event_photographers||[]).length})`], 
+          ['vendors', `Vendors (${(event.vendors || []).length})`],
           ['edit', 'Edit Event']
         ].map(([tab, label]) => (
           <button
@@ -378,7 +400,7 @@ const OrganizerEventDetails = () => {
 
       {/* Display Content */}
       <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1fr', gap: '4rem', alignItems: 'flex-start' }}>
-        
+
         {/* Main section */}
         <div style={{ minWidth: 0 }}>
           {activeTab === 'participants' && (
@@ -390,10 +412,10 @@ const OrganizerEventDetails = () => {
                     DOWNLOAD CSV
                   </button>
                 </div>
-                
+
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <select 
-                    value={checkInFilter} 
+                  <select
+                    value={checkInFilter}
                     onChange={e => setCheckInFilter(e.target.value)}
                     style={{ ...styles.searchInput, border: '1px solid var(--glass-border)', borderRadius: '12px', background: 'var(--surface-highest)' }}
                   >
@@ -403,7 +425,7 @@ const OrganizerEventDetails = () => {
                   </select>
                   <div className="glass" style={styles.searchWrapper}>
                     <Search size={18} color="var(--primary)" />
-                    <input 
+                    <input
                       placeholder="Search name, email, group..."
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
@@ -455,7 +477,7 @@ const OrganizerEventDetails = () => {
                                 {r.group_name ? (
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                                     <span style={styles.groupBadge}><Group size={12} /> {r.group_name}</span>
-                                    <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>Code: {r.group_code?.slice(0,8)}</span>
+                                    <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>Code: {r.group_code?.slice(0, 8)}</span>
                                   </div>
                                 ) : (
                                   <span style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>Individual Ticket</span>
@@ -479,7 +501,7 @@ const OrganizerEventDetails = () => {
                                     <span style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '0.8rem' }}>Day {lastDayInfo.dayNum}</span>
                                     <span style={{ fontSize: '0.75rem', color: 'var(--on-surface)' }}>{lastDayInfo.weekday}</span>
                                     <span style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>{lastDayInfo.dateStr}</span>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>{lastCI.time.substring(0,5)}</span>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>{lastCI.time.substring(0, 5)}</span>
                                   </div>
                                 ) : (
                                   <span style={{ color: 'var(--on-surface-variant)', fontSize: '0.8rem' }}>—</span>
@@ -584,10 +606,10 @@ const OrganizerEventDetails = () => {
                     DOWNLOAD CSV
                   </button>
                 </div>
-                
+
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <select 
-                    value={checkedInDateFilter} 
+                  <select
+                    value={checkedInDateFilter}
                     onChange={e => setCheckedInDateFilter(e.target.value)}
                     style={{ ...styles.searchInput, border: '1px solid var(--glass-border)', borderRadius: '12px', background: 'var(--surface-highest)' }}
                   >
@@ -598,7 +620,7 @@ const OrganizerEventDetails = () => {
                   </select>
                   <div className="glass" style={styles.searchWrapper}>
                     <Search size={18} color="var(--primary)" />
-                    <input 
+                    <input
                       placeholder="Search name, email, group..."
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
@@ -629,7 +651,7 @@ const OrganizerEventDetails = () => {
                     <tbody>
                       {filteredCheckedInAttendees.map(r => {
                         const checkinForDate = (r.checkin_history || []).find(ch => ch.date === (checkedInDateFilter !== 'ALL' ? checkedInDateFilter : r.checkin_history[0]?.date));
-                        
+
                         // Compute event day number, full date, and weekday from checkin date
                         const getEventDayInfo = (checkinDate) => {
                           if (!checkinDate || !event?.start_date) return null;
@@ -712,22 +734,22 @@ const OrganizerEventDetails = () => {
               {saveError && <div style={{ padding: '1rem', borderRadius: '12px', background: 'rgba(239,68,68,0.08)', color: '#ef4444', fontWeight: 700, marginBottom: '1.5rem' }}>{saveError}</div>}
               <form onSubmit={handleSaveEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                  {[['title','Title','text'],['venue_name','Venue Name','text'],['venue_address','Venue Address','text'],['country','Country','text'],['state_or_county','State / County','text'],['max_participants','Max Participants','number'],['currency','Currency','text']].map(([field, label, type]) => (
+                  {[['title', 'Title', 'text'], ['venue_name', 'Venue Name', 'text'], ['venue_address', 'Venue Address', 'text'], ['country', 'Country', 'text'], ['state_or_county', 'State / County', 'text'], ['max_participants', 'Max Participants', 'number'], ['currency', 'Currency', 'text']].map(([field, label, type]) => (
                     <div key={field} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <label style={styles.editLabel}>{label}</label>
-                      <input type={type} value={editForm[field] || ''} onChange={e => setEditForm({...editForm, [field]: e.target.value})} style={styles.editInput} />
+                      <input type={type} value={editForm[field] || ''} onChange={e => setEditForm({ ...editForm, [field]: e.target.value })} style={styles.editInput} />
                     </div>
                   ))}
-                  {[['start_date','Start Date'],['end_date','End Date'],['registration_start','Registration Start'],['registration_deadline','Registration Deadline']].map(([field, label]) => (
+                  {[['start_date', 'Start Date'], ['end_date', 'End Date'], ['registration_start', 'Registration Start'], ['registration_deadline', 'Registration Deadline']].map(([field, label]) => (
                     <div key={field} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <label style={styles.editLabel}>{label}</label>
-                      <input type="datetime-local" value={editForm[field] || ''} onChange={e => setEditForm({...editForm, [field]: e.target.value})} style={styles.editInput} />
+                      <input type="datetime-local" value={editForm[field] || ''} onChange={e => setEditForm({ ...editForm, [field]: e.target.value })} style={styles.editInput} />
                     </div>
                   ))}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={styles.editLabel}>Description</label>
-                  <textarea rows={4} value={editForm.description || ''} onChange={e => setEditForm({...editForm, description: e.target.value})} style={{ ...styles.editInput, resize: 'vertical' }} />
+                  <textarea rows={4} value={editForm.description || ''} onChange={e => setEditForm({ ...editForm, description: e.target.value })} style={{ ...styles.editInput, resize: 'vertical' }} />
                 </div>
 
                 {/* Ticket Categories */}
@@ -741,10 +763,10 @@ const OrganizerEventDetails = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {editTickets.map((t, idx) => (
                       <div key={idx} className="glass" style={{ padding: '1.5rem', borderRadius: '16px', display: 'grid', gridTemplateColumns: '2fr 3fr 1fr 1fr auto', gap: '1rem', alignItems: 'center' }}>
-                        <input placeholder="Name" value={t.name} onChange={e => handleTicketChange(idx,'name',e.target.value)} style={styles.editInput} />
-                        <input placeholder="Description" value={t.description} onChange={e => handleTicketChange(idx,'description',e.target.value)} style={styles.editInput} />
-                        <input type="number" placeholder="Price" value={t.price} onChange={e => handleTicketChange(idx,'price',e.target.value)} style={styles.editInput} />
-                        <input type="number" placeholder="Qty" value={t.quantity} onChange={e => handleTicketChange(idx,'quantity',e.target.value)} style={styles.editInput} />
+                        <input placeholder="Name" value={t.name} onChange={e => handleTicketChange(idx, 'name', e.target.value)} style={styles.editInput} />
+                        <input placeholder="Description" value={t.description} onChange={e => handleTicketChange(idx, 'description', e.target.value)} style={styles.editInput} />
+                        <input type="number" placeholder="Price" value={t.price} onChange={e => handleTicketChange(idx, 'price', e.target.value)} style={styles.editInput} />
+                        <input type="number" placeholder="Qty" value={t.quantity} onChange={e => handleTicketChange(idx, 'quantity', e.target.value)} style={styles.editInput} />
                         <button type="button" onClick={() => removeTicket(idx)} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px', padding: '8px', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
                       </div>
                     ))}
@@ -761,22 +783,61 @@ const OrganizerEventDetails = () => {
 
           {activeTab === 'vendors' && (
             <div className="glass" style={{ padding: '3rem', borderRadius: '32px' }}>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.5px', marginBottom: '2rem' }}>Assigned Photographers & Planners</h2>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.5px', marginBottom: '2rem' }}>Assigned Vendors</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {(event.event_photographers || []).length === 0 ? (
-                  <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.95rem', textAlign: 'center', padding: '2rem 0' }}>No photographers assigned yet.</p>
+                {(event.vendors || []).length === 0 ? (
+                  <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.95rem', textAlign: 'center', padding: '2rem 0' }}>No vendors assigned yet.</p>
                 ) : (
-                  (event.event_photographers || []).map(p => (
-                    <div key={p.id} className="glass" style={styles.vendorCard}>
-                       <div>
-                         <div style={{ fontWeight: 800, fontSize: '1rem' }}>{p.photographer_name || p.email}</div>
-                         <div style={{ fontSize: '0.75rem', color: p.invitation_sent ? '#22c55e' : 'var(--on-surface-variant)', fontWeight: 850 }}>
-                           {p.invitation_sent ? 'ASSIGNED & ACTIVE' : 'PENDING ACCEPTANCE'}
-                         </div>
-                       </div>
-                       <div style={{ color: 'var(--primary)' }}>
-                         {p.photographer_name ? <CheckCircle size={18} /> : <Clock size={18} />}
-                       </div>
+                  (event.vendors || []).map(p => (
+                    <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div 
+                        onClick={() => setExpandedVendorId(expandedVendorId === p.id ? null : p.id)} 
+                        className="glass" 
+                        style={{...styles.vendorCard, cursor: 'pointer', transition: 'all 0.2s', border: expandedVendorId === p.id ? '1px solid var(--primary)' : '1px solid var(--glass-border)'}}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '1rem' }}>
+                            {p.vendor_username || p.vendor_email} 
+                            <span style={{ color: 'var(--primary)', fontSize: '0.8rem', marginLeft: '8px', textTransform: 'uppercase' }}>({p.role_display || p.role})</span>
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: p.is_confirmed ? '#22c55e' : 'var(--on-surface-variant)', fontWeight: 850 }}>
+                            {p.is_confirmed ? 'ACCOUNT REGISTERED' : 'PENDING REGISTRATION'}
+                          </div>
+                        </div>
+                        <div style={{ color: 'var(--primary)' }}>
+                          {p.is_confirmed ? <CheckCircle size={18} /> : <Clock size={18} />}
+                        </div>
+                      </div>
+
+                      {expandedVendorId === p.id && (
+                        <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', background: 'rgba(0,0,0,0.15)', borderLeft: '3px solid var(--primary)' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.3rem' }}>Business Name</div>
+                              <div style={{ fontSize: '1.05rem', fontWeight: 700 }}>{p.vendor_business_name || 'N/A'}</div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.3rem' }}>Contact Name</div>
+                              <div style={{ fontSize: '1rem', fontWeight: 600 }}>{p.vendor_username}</div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.3rem' }}>Email Address</div>
+                              <div style={{ fontSize: '0.95rem', fontWeight: 600, wordBreak: 'break-all' }}>{p.vendor_email}</div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.3rem' }}>Phone Number</div>
+                              <div style={{ fontSize: '0.95rem', fontWeight: 600 }}>{p.vendor_phone || 'N/A'}</div>
+                            </div>
+                          </div>
+                          
+                          <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>Business Verification Status</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: p.vendor_is_verified ? '#22c55e' : '#ef4444', fontWeight: 900, fontSize: '0.85rem' }}>
+                              {p.vendor_is_verified ? <><CheckCircle size={16} /> VERIFIED</> : <><X size={16} /> UNVERIFIED</>}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
@@ -787,7 +848,7 @@ const OrganizerEventDetails = () => {
 
         {/* Sidebar details */}
         <aside style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-          
+
           {/* Quick invite block */}
           {activeTab === 'vendors' && (
             <div className="glass" style={{ padding: '2.5rem', borderRadius: '28px' }}>
@@ -796,56 +857,79 @@ const OrganizerEventDetails = () => {
               </h4>
               <form onSubmit={handleInvite} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                 <div style={{ position: 'relative' }}>
-                   <User size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
-                   <input 
-                     type="text" 
-                     placeholder="Enter vendor name..." 
-                     value={inviteName}
-                     onChange={(e) => setInviteName(e.target.value)}
-                     required
-                     style={styles.asideInput}
-                   />
+                  <User size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
+                  <input
+                    placeholder="Enter vendor name..."
+                    value={inviteName}
+                    onChange={e => setInviteName(e.target.value)}
+                    required
+                    style={{ ...styles.asideInput, paddingLeft: '3rem' }}
+                  />
                 </div>
                 <div style={{ position: 'relative' }}>
-                   <Mail size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
-                   <input 
-                     type="email" 
-                     placeholder="Enter vendor email..." 
-                     value={inviteEmail}
-                     onChange={(e) => setInviteEmail(e.target.value)}
-                     required
-                     style={styles.asideInput}
-                   />
+                  <input
+                    type="tel"
+                    placeholder="Enter vendor phone..."
+                    value={invitePhone}
+                    onChange={e => setInvitePhone(e.target.value)}
+                    required
+                    style={{ ...styles.asideInput }}
+                  />
                 </div>
                 <div style={{ position: 'relative' }}>
-                   <select 
-                     value={inviteRole}
-                     onChange={(e) => setInviteRole(e.target.value)}
-                     required
-                     style={{
-                       ...styles.asideInput,
-                       width: '100%',
-                       appearance: 'none',
-                       background: 'var(--surface-highest, rgba(255,255,255,0.06))',
-                       color: 'var(--on-surface)',
-                       cursor: 'pointer',
-                       border: '1px solid var(--glass-border)',
-                       outline: 'none',
-                       paddingLeft: '2.8rem'
-                     }}
-                   >
-                     <option value="PHOTOGRAPHER" style={{ background: 'var(--surface-highest, #1a1a1a)', color: 'var(--on-surface)' }}>Photographer</option>
-                     <option value="VIDEOGRAPHER" style={{ background: 'var(--surface-highest, #1a1a1a)', color: 'var(--on-surface)' }}>Videographer</option>
-                   </select>
-                   <Briefcase size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)', pointerEvents: 'none' }} />
+                  <Mail size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }} />
+                  <input
+                    type="email"
+                    placeholder="Enter vendor email..."
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    required
+                    style={styles.asideInput}
+                  />
                 </div>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value)}
+                    required
+                    style={{
+                      ...styles.asideInput,
+                      width: '100%',
+                      appearance: 'none',
+                      background: 'var(--surface-highest, rgba(255,255,255,0.06))',
+                      color: 'var(--on-surface)',
+                      cursor: 'pointer',
+                      border: '1px solid var(--glass-border)',
+                      outline: 'none',
+                      paddingLeft: '2.8rem'
+                    }}
+                  >
+                    {vendorTypes.map(vt => (
+                      <option key={vt} value={vt} style={{ background: 'var(--surface-highest, #1a1a1a)', color: 'var(--on-surface)' }}>{vt.replace('_', ' ')}</option>
+                    ))}
+                    <option value="OTHER" style={{ background: 'var(--surface-highest, #1a1a1a)', color: 'var(--on-surface)' }}>Others (Specify)</option>
+                  </select>
+                  <Briefcase size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)', pointerEvents: 'none' }} />
+                </div>
+                
+                {inviteRole === 'OTHER' && (
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      placeholder="Specify Custom Service Type (e.g. DJ)"
+                      value={customInviteRole}
+                      onChange={e => setCustomInviteRole(e.target.value)}
+                      required
+                      style={styles.asideInput}
+                    />
+                  </div>
+                )}
                 {invitationError && <div style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: 700 }}>{invitationError}</div>}
-                <button 
+                <button
                   disabled={inviting}
-                  className="btn-primary" 
+                  className="btn-primary"
                   style={{ width: '100%', padding: '1rem', borderRadius: '12px', fontWeight: 800, fontSize: '0.85rem' }}
                 >
-                  {inviting ? 'SENDING...' : 'DISPATCH INVITE'}
+                  {inviting ? 'SENDING...' : 'SEND INVITE'}
                 </button>
               </form>
             </div>
@@ -869,24 +953,26 @@ const OrganizerEventDetails = () => {
             </div>
             <div style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', color: 'var(--on-surface-variant)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                 <Info size={16} color="var(--primary)" /> About Session
+                <Info size={16} color="var(--primary)" /> About Session
               </h4>
               <p style={{ color: 'var(--on-surface)', lineHeight: '1.6', fontSize: '0.95rem' }}>{event.description}</p>
-              
+
               <div style={{ height: '1px', background: 'var(--glass-border)', margin: '0.5rem 0' }}></div>
-              
+
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem' }}>
-                <Calendar size={18} color="var(--primary)" /> 
+                <Calendar size={18} color="var(--primary)" />
                 <span>{new Date(event.start_date).toLocaleDateString()}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem' }}>
-                <MapPin size={18} color="var(--primary)" /> 
+                <MapPin size={18} color="var(--primary)" />
                 <span>{event.venue_name || event.location}</span>
               </div>
             </div>
           </div>
         </aside>
       </div>
+
+
 
       {/* Check-in History Modal */}
       {selectedHistoryUser && (
@@ -934,7 +1020,7 @@ const OrganizerEventDetails = () => {
               <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Admin Check-In</h3>
               <button onClick={() => setAdminCheckInTarget(null)} style={{ background: 'none', border: 'none', color: 'var(--on-surface)', cursor: 'pointer' }}><X size={20} /></button>
             </div>
-            
+
             <div style={{ marginBottom: '2rem' }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', marginBottom: '0.3rem' }}>Checking in:</div>
               <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--primary)' }}>{adminCheckInTarget.attendee_name_display}</div>
@@ -947,7 +1033,7 @@ const OrganizerEventDetails = () => {
                 {(() => {
                   const remainingDays = getRemainingDays(adminCheckInTarget);
                   return remainingDays.length > 0 ? (
-                    <select 
+                    <select
                       value={adminCheckInDate}
                       onChange={(e) => setAdminCheckInDate(e.target.value)}
                       required

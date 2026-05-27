@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getNames } from 'country-list';
 import { eventService } from '../api/event';
+import { vendorService } from '../api/vendor';
 import { 
   Loader2, Plus, Users, Trash2, Calendar, MapPin, Ticket, 
   Image as ImageIcon, Video, Clock, Eye, ShieldCheck, Info, X 
@@ -34,6 +35,10 @@ const OwnerDashboard = () => {
   const [ticketTypes, setTicketTypes] = useState([
     { name: 'Regular', price: '0.00', quantity: 100, description: 'General admission access' }
   ]);
+
+  // Event Vendors
+  const [eventVendors, setEventVendors] = useState([]);
+  const [vendorTypes, setVendorTypes] = useState([]);
   
   const [bannerImage, setBannerImage] = useState(null);
   const [bannerPortrait, setBannerPortrait] = useState(null);
@@ -43,7 +48,17 @@ const OwnerDashboard = () => {
 
   useEffect(() => {
     fetchEvents();
+    fetchVendorTypes();
   }, []);
+
+  const fetchVendorTypes = async () => {
+    try {
+      const res = await vendorService.getVendorTypes();
+      setVendorTypes(res.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // Auto-calculate number of days when dates change
   useEffect(() => {
@@ -84,6 +99,20 @@ const OwnerDashboard = () => {
     setTicketTypes(updated);
   };
 
+  const handleAddVendor = () => {
+    setEventVendors([...eventVendors, { role: 'PHOTOGRAPHER', vendor_name: '', vendor_email: '', vendor_phone: '' }]);
+  };
+
+  const handleRemoveVendor = (index) => {
+    setEventVendors(eventVendors.filter((_, i) => i !== index));
+  };
+
+  const handleVendorChange = (index, field, value) => {
+    const updated = [...eventVendors];
+    updated[index][field] = value;
+    setEventVendors(updated);
+  };
+
   const handleCreateEvent = async (e) => {
     e.preventDefault();
     setCreating(true);
@@ -97,6 +126,14 @@ const OwnerDashboard = () => {
       setCreating(false);
       return;
     }
+
+    // Handle Custom Vendor Roles
+    const finalVendors = eventVendors.map(v => {
+      if (v.role === 'OTHER' && v.custom_role) {
+        return { ...v, role: v.custom_role };
+      }
+      return v;
+    });
 
     const formData = new FormData();
     formData.append('title', newEvent.title);
@@ -121,6 +158,11 @@ const OwnerDashboard = () => {
 
     // Append nested ticket categories as stringified JSON
     formData.append('ticket_types', JSON.stringify(ticketTypes));
+    
+    // Append nested event vendors as stringified JSON
+    if (finalVendors.length > 0) {
+      formData.append('vendors', JSON.stringify(finalVendors));
+    }
 
     try {
       await eventService.createEvent(formData);
@@ -143,6 +185,7 @@ const OwnerDashboard = () => {
         currency: 'USD'
       });
       setTicketTypes([{ name: 'Regular', price: '0.00', quantity: 100, description: 'General admission access' }]);
+      setEventVendors([]);
       setBannerImage(null);
       setBannerPortrait(null);
       setBannerVideo(null);
@@ -382,6 +425,61 @@ const OwnerDashboard = () => {
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* Services & Vendors Builder */}
+              <div style={styles.formSection}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={styles.sectionTitle}>
+                    <span style={styles.iconBadge}><Users size={18} /></span> Services & Vendors
+                  </h3>
+                  <button 
+                    type="button" 
+                    onClick={handleAddVendor} 
+                    style={{ 
+                      display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.85rem', fontWeight: 800, borderRadius: '10px', cursor: 'pointer', background: 'rgba(255, 177, 115, 0.12)', border: '1px solid var(--primary)', color: 'var(--primary)', transition: 'all 0.2s ease-in-out'
+                    }}
+                  >
+                    + Add Vendor
+                  </button>
+                </div>
+                
+                {eventVendors.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                    <div style={{ ...styles.ticketBuilderRow, backgroundColor: 'transparent', border: '1px solid transparent', paddingBottom: 0, paddingTop: 0, marginBottom: '-0.5rem', fontSize: '0.75rem', fontWeight: 900, color: 'rgba(255, 255, 255, 0.55)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                      <div style={{ flex: 1.5, paddingLeft: '19px' }}>Service Type</div>
+                      <div style={{ flex: 2, paddingLeft: '19px' }}>Vendor Name</div>
+                      <div style={{ flex: 2, paddingLeft: '19px' }}>Vendor Email</div>
+                      <div style={{ flex: 1.5, paddingLeft: '19px' }}>Vendor Phone</div>
+                      <div style={{ width: '34px' }}></div>
+                    </div>
+
+                    {eventVendors.map((v, idx) => (
+                      <div key={`vendor-${idx}`} style={{...styles.ticketBuilderRow, flexDirection: 'column', alignItems: 'stretch', gap: '0.8rem'}}>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                          <select value={v.role} onChange={e => handleVendorChange(idx, 'role', e.target.value)} required style={{...styles.input, flex: 1.5, backgroundColor: 'var(--bg-color)', cursor: 'pointer'}}>
+                            {vendorTypes.map(vt => (
+                              <option key={vt} value={vt}>{vt.replace('_', ' ')}</option>
+                            ))}
+                            <option value="OTHER">Others (Specify)</option>
+                          </select>
+                          <input placeholder="Vendor Name" value={v.vendor_name} onChange={e => handleVendorChange(idx, 'vendor_name', e.target.value)} required style={{...styles.input, flex: 2}} />
+                          <input type="email" placeholder="Email Address" value={v.vendor_email} onChange={e => handleVendorChange(idx, 'vendor_email', e.target.value)} required style={{...styles.input, flex: 2}} />
+                          <input type="tel" placeholder="Phone" value={v.vendor_phone} onChange={e => handleVendorChange(idx, 'vendor_phone', e.target.value)} style={{...styles.input, flex: 1.5}} />
+                          
+                          <button type="button" onClick={() => handleRemoveVendor(idx)} style={styles.deleteTicketBtn}>
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                        {v.role === 'OTHER' && (
+                          <div style={{ paddingLeft: '0' }}>
+                            <input placeholder="Specify Custom Service Type (e.g. DJ)" value={v.custom_role || ''} onChange={e => handleVendorChange(idx, 'custom_role', e.target.value)} required style={{...styles.input, width: '40%'}} />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'flex-end', marginTop: '2.5rem' }}>
