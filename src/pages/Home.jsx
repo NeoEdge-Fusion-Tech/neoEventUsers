@@ -12,6 +12,7 @@ const Home = () => {
   const getRegistrationStatus = (event) => {
     const now = new Date();
     if (event.registration_start && new Date(event.registration_start) > now) return 'Yet to Start';
+    if (event.end_date && new Date(event.end_date) < now) return 'Past';
     if (event.registration_deadline && new Date(event.registration_deadline) < now) return 'Past';
     return 'In Progress';
   };
