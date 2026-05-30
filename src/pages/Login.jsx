@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Mail, Lock, LogIn, AlertCircle, Disc, Loader2 } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Disc, Loader2, Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { login, loading: authLoading } = useAuth();
   
   const navigate = useNavigate();
@@ -80,7 +81,7 @@ const LoginPage = () => {
             <div style={styles.inputWrapper}>
               <Lock style={styles.icon} size={20} />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="••••••••"
                 value={formData.password}
@@ -88,6 +89,13 @@ const LoginPage = () => {
                 required
                 style={styles.input}
               />
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--on-surface-variant)', display: 'flex', alignItems: 'center' }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 

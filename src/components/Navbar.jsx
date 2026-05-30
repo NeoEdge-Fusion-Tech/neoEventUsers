@@ -64,7 +64,7 @@ const Navbar = () => {
         {user && user.role === 'VENDOR' && (
           <>
             <NavItem to="/vendor/dashboard" label="Dashboard" icon={Briefcase} />
-            <NavItem to={`/p/${user.username}`} label="Portfolio" icon={ImageIcon} />
+            <NavItem to={user.vendor_business_id ? `/vendor/profile/${user.vendor_business_id}` : "#"} label="Portfolio" icon={ImageIcon} />
           </>
         )}
 

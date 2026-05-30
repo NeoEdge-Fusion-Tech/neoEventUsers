@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { vendorService } from '../api/vendor';
-import { FolderPlus, Image as ImageIcon, Video, CalendarPlus, Loader2, Plus, UploadCloud } from 'lucide-react';
+import { FolderPlus, Image as ImageIcon, Video, CalendarPlus, Loader2, Plus, UploadCloud, ArrowLeft } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const VendorDashboard = () => {
@@ -14,20 +14,21 @@ const VendorDashboard = () => {
   const [activeTab, setActiveTab] = useState('assignments');
 
   const [newCategory, setNewCategory] = useState({ name: '', description: '' });
-  const [newEvent, setNewEvent] = useState({ category: '', system_event: '', name: '', location: '', date: '' });
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [newEvent, setNewEvent] = useState({ category: '', system_event: '', name: '', description: '', details: '', location: '', address: '', state: '', date: '' });
   const [newMedia, setNewMedia] = useState({ event: '', file_type: 'IMAGE', caption: '' });
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   
-  const [invitedMediaFile, setInvitedMediaFile] = useState(null);
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [assignmentGallery, setAssignmentGallery] = useState([]);
+  const [invitedMediaFiles, setInvitedMediaFiles] = useState([]);
   const [uploadingInvited, setUploadingInvited] = useState(false);
   
   const vendorSubtype = user?.vendor_profile?.subtype || '';
   const isMediaVendor = vendorSubtype === 'PHOTOGRAPHER' || vendorSubtype === 'VIDEOGRAPHER';
   
-  const tabs = ['assignments', 'categories', 'events', 'gallery'];
-  if (isMediaVendor) {
-    tabs.push('invited_events');
-  }
+  const tabs = ['assignments', 'categories', 'events'];
 
   useEffect(() => {
     fetchData();
@@ -43,11 +44,16 @@ const VendorDashboard = () => {
         vendorService.getAllSystemEvents().catch(() => ({ data: [] })),
         vendorService.getMyAssignments().catch(() => ({ data: [] }))
       ]);
+      const eventsData = evRes.data.results || evRes.data || [];
       setCategories(catRes.data.results || catRes.data || []);
-      setEvents(evRes.data.results || evRes.data || []);
-      setGallery(galRes.data.results || galRes.data || []);
+      setEvents(eventsData);
       setSystemEvents(sysEvRes.data.results || sysEvRes.data || []);
       setAssignments(asgRes.data.results || asgRes.data || []);
+
+      if (selectedEvent) {
+        const updatedEvent = eventsData.find(e => e.id === selectedEvent.id);
+        if (updatedEvent) setSelectedEvent(updatedEvent);
+      }
     } catch (error) {
       console.error("Failed to fetch vendor data", error);
     } finally {
@@ -55,13 +61,65 @@ const VendorDashboard = () => {
     }
   };
 
-  const handleCreateCategory = async (e) => {
+  const handleSelectAssignment = async (assignment) => {
+    setSelectedAssignment(assignment);
+    if (isMediaVendor) {
+      fetchAssignmentGallery(assignment.id);
+    }
+  };
+
+  const fetchAssignmentGallery = async (assignmentId) => {
+    try {
+      const res = await vendorService.getInvitedEventMedia(assignmentId);
+      setAssignmentGallery(res.data.results || res.data || []);
+    } catch (err) {
+      console.error("Failed to fetch assignment gallery", err);
+    }
+  };
+
+  const handleSaveCategory = async (e) => {
     e.preventDefault();
     try {
-      await vendorService.createCategory(newCategory);
+      if (editingCategory) {
+        await vendorService.updateCategory(editingCategory.id, newCategory);
+        setEditingCategory(null);
+      } else {
+        await vendorService.createCategory(newCategory);
+      }
       setNewCategory({ name: '', description: '' });
       fetchData();
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      if (err.response?.status === 400 && err.response?.data?.non_field_errors) {
+        alert('A category with this name already exists.');
+      } else {
+        alert('Error saving category. Names must be unique.');
+      }
+    }
+  };
+
+  const handleEditCategoryClick = (cat) => {
+    setEditingCategory(cat);
+    setNewCategory({ name: cat.name, description: cat.description || '' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEditCategory = () => {
+    setEditingCategory(null);
+    setNewCategory({ name: '', description: '' });
+  };
+
+  const handleDeleteCategory = async (id) => {
+    if (window.confirm("Are you sure you want to delete this category? This may affect linked events.")) {
+      try {
+        await vendorService.deleteCategory(id);
+        if (editingCategory && editingCategory.id === id) cancelEditCategory();
+        fetchData();
+      } catch (err) {
+        console.error(err);
+        alert("Failed to delete category.");
+      }
+    }
   };
 
   const handleCreateEvent = async (e) => {
@@ -82,6 +140,7 @@ const VendorDashboard = () => {
         system_event: sysEv.id,
         name: sysEv.title || sysEv.name,
         location: sysEv.location,
+        address: sysEv.location, // System events usually combine these
         date: sysEv.date || sysEv.start_date
       });
     } else {
@@ -91,41 +150,44 @@ const VendorDashboard = () => {
 
   const handleUploadMedia = async (e) => {
     e.preventDefault();
-    if (!selectedFile) return;
-    const formData = new FormData();
-    formData.append('event', newMedia.event);
-    formData.append('file_type', newMedia.file_type);
-    formData.append('caption', newMedia.caption);
-    formData.append('media_file', selectedFile);
-
+    if (selectedFiles.length === 0 || !selectedEvent) return;
+    setUploadingInvited(true);
     try {
-      await vendorService.uploadMedia(formData);
+      const uploadPromises = Array.from(selectedFiles).map(file => {
+        const formData = new FormData();
+        formData.append('event', selectedEvent.id);
+        formData.append('file_type', newMedia.file_type);
+        formData.append('caption', newMedia.caption);
+        formData.append('media_file', file);
+        return vendorService.uploadMedia(formData);
+      });
+
+      await Promise.all(uploadPromises);
       setNewMedia({ event: '', file_type: 'IMAGE', caption: '' });
-      setSelectedFile(null);
+      setSelectedFiles([]);
       fetchData();
-    } catch (err) { console.error(err); }
-  };
-
-  const handleRespondInvite = async (code, accept) => {
-    try {
-      await vendorService.respondToInvite(code, accept);
-      fetchData();
-    } catch (err) {
-      alert("Error responding to invite.");
+    } catch (err) { 
+      console.error(err); 
+      alert('Error uploading some media.');
+    } finally {
+      setUploadingInvited(false);
     }
   };
 
   const handleUploadInvitedMedia = async (assignmentId) => {
-    if (!invitedMediaFile) return;
+    if (invitedMediaFiles.length === 0) return;
     setUploadingInvited(true);
-    const formData = new FormData();
-    formData.append('raw_image', invitedMediaFile);
     try {
-      await vendorService.uploadInvitedEventMedia(assignmentId, formData);
-      setInvitedMediaFile(null);
-      alert('Media uploaded successfully! It will be watermarked shortly.');
-      // Optionally re-fetch if we display the gallery here
-      fetchData();
+      const uploadPromises = Array.from(invitedMediaFiles).map(file => {
+        const formData = new FormData();
+        formData.append('raw_image', file);
+        return vendorService.uploadInvitedEventMedia(assignmentId, formData);
+      });
+
+      await Promise.all(uploadPromises);
+      setInvitedMediaFiles([]);
+      alert('Media uploaded successfully!');
+      fetchAssignmentGallery(assignmentId);
     } catch (err) {
       console.error(err);
       alert('Error uploading media.');
@@ -147,13 +209,17 @@ const VendorDashboard = () => {
             assignments: 'Event Assignments',
             categories: 'Categories',
             events: 'Events',
-            gallery: 'Gallery',
-            invited_events: 'Invited Events (Upload)'
+            gallery: 'Gallery'
           };
           return (
             <button 
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => {
+                setActiveTab(tab);
+                setSelectedAssignment(null);
+                setSelectedEvent(null);
+                cancelEditCategory();
+              }}
               className={isActive ? 'btn-primary' : 'glass'}
               style={{
                 ...styles.tabBtn,
@@ -172,25 +238,102 @@ const VendorDashboard = () => {
         })}
       </div>
 
-      {activeTab === 'assignments' && (
+      {activeTab === 'assignments' && !selectedAssignment && (
         <div style={styles.section}>
           <div style={styles.list}>
             {assignments.length === 0 ? <p>No assignments yet.</p> : assignments.map(a => (
-              <div key={a.id} className="glass hover-card" style={styles.listItem}>
-                <h3>Event ID: {a.event}</h3>
-                <p>Role: {a.role_display}</p>
-                <p>Status: {a.is_confirmed ? "Confirmed" : "Pending"}</p>
-                {!a.is_confirmed && (
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                    <button onClick={() => handleRespondInvite(a.invitation_code || a.id, true)} className="btn-primary" style={{...styles.submitBtn, padding: '10px', fontSize: '0.9rem'}}>Accept</button>
-                    <button onClick={() => handleRespondInvite(a.invitation_code || a.id, false)} className="glass" style={{...styles.tabBtn, padding: '10px', fontSize: '0.9rem'}}>Decline</button>
-                  </div>
-                )}
-                {a.is_confirmed && (
-                  <p style={{ marginTop: '10px', color: 'var(--primary)', fontWeight: 'bold' }}>You can link this event in the Events tab.</p>
-                )}
+              <div 
+                key={a.id} 
+                className="glass hover-card" 
+                style={{...styles.listItem, cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}
+                onClick={() => handleSelectAssignment(a)}
+              >
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '10px', color: 'var(--primary)' }}>
+                  {a.event_title || `Event ID: ${a.event}`}
+                </h3>
+                <p style={{ fontWeight: 600 }}>Role: {a.role_display}</p>
+                <p style={{ color: 'var(--on-surface-variant)', marginTop: '10px' }}>Click to view details {isMediaVendor && '& upload media'}</p>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'assignments' && selectedAssignment && (
+        <div style={styles.section}>
+          <button 
+            className="glass" 
+            style={{...styles.tabBtn, width: 'fit-content', display: 'flex', alignItems: 'center', gap: '8px'}} 
+            onClick={() => setSelectedAssignment(null)}
+          >
+            <ArrowLeft size={18} /> Back to Assignments
+          </button>
+          
+          <div className="glass" style={styles.card}>
+            <h2 style={{ fontSize: '2rem', marginBottom: '10px', color: 'var(--primary)' }}>
+              {selectedAssignment.event_title || `Event ID: ${selectedAssignment.event}`}
+            </h2>
+            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Role: {selectedAssignment.role_display}</p>
+            
+            {isMediaVendor && (
+              <div style={{ marginTop: '40px' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
+                  <UploadCloud size={24} color="var(--primary)" /> 
+                  Upload Event Media
+                </h3>
+                <div style={{ padding: '20px', background: 'rgba(0,0,0,0.2)', borderRadius: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    <input 
+                      type="file" 
+                      accept="image/*,video/*" 
+                      multiple
+                      onChange={e => setInvitedMediaFiles(e.target.files)} 
+                      style={styles.input} 
+                    />
+                    <button 
+                      onClick={() => handleUploadInvitedMedia(selectedAssignment.id)}
+                      disabled={invitedMediaFiles.length === 0 || uploadingInvited}
+                      className="btn-primary" 
+                      style={{...styles.submitBtn, opacity: (invitedMediaFiles.length === 0 || uploadingInvited) ? 0.5 : 1}}
+                    >
+                      {uploadingInvited ? <Loader2 className="spinner" size={20} /> : `Upload ${invitedMediaFiles.length > 0 ? invitedMediaFiles.length : ''} Media`}
+                    </button>
+                  </div>
+                </div>
+
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '40px', marginBottom: '15px' }}>
+                  <ImageIcon size={24} color="var(--primary)" /> 
+                  Event Gallery
+                </h3>
+                {assignmentGallery.length === 0 ? (
+                  <p style={{ color: 'var(--on-surface-variant)' }}>No media uploaded yet.</p>
+                ) : (
+                  <div style={styles.grid}>
+                    {assignmentGallery.map(g => (
+                      <div key={g.id} className="glass hover-card" style={styles.mediaCard}>
+                        {g.raw_image && <img src={g.raw_image} alt="Upload" style={styles.mediaImage} />}
+                        <div style={{ padding: '15px' }}>
+                          <p style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', marginBottom: '5px' }}>
+                            Uploaded: {new Date(g.uploaded_at).toLocaleDateString()}
+                          </p>
+                          {g.is_processed ? (
+                            <span style={{ color: '#4ade80', fontWeight: 600, fontSize: '0.9rem' }}>✓ Watermarked</span>
+                          ) : (
+                            <span style={{ color: '#facc15', fontWeight: 600, fontSize: '0.9rem' }}>⧗ Processing...</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {!isMediaVendor && (
+              <div style={{ marginTop: '30px', padding: '20px', background: 'rgba(0,0,0,0.2)', borderRadius: '16px' }}>
+                <p>You are assigned to this event as a {selectedAssignment.role_display}.</p>
+                <p style={{ marginTop: '10px', color: 'var(--on-surface-variant)' }}>Please coordinate with the event owner for further instructions.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -198,25 +341,52 @@ const VendorDashboard = () => {
       {activeTab === 'categories' && (
         <div style={styles.section}>
           <div className="glass" style={styles.card}>
-            <h2><FolderPlus size={20} /> Add Category</h2>
-            <form onSubmit={handleCreateCategory} style={styles.form}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FolderPlus size={20} /> {editingCategory ? 'Edit Category' : 'Add Category'}
+              </h2>
+              {editingCategory && (
+                <button onClick={cancelEditCategory} className="glass" style={{ border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', color: 'var(--on-surface-variant)' }}>
+                  Cancel
+                </button>
+              )}
+            </div>
+            <form onSubmit={handleSaveCategory} style={{...styles.form, marginTop: 0}}>
               <input placeholder="Category Name (e.g. Weddings)" value={newCategory.name} onChange={e => setNewCategory({...newCategory, name: e.target.value})} required style={styles.input} />
               <input placeholder="Description" value={newCategory.description} onChange={e => setNewCategory({...newCategory, description: e.target.value})} style={styles.input} />
-              <button type="submit" className="btn-primary" style={styles.submitBtn}>Create Category</button>
+              <button type="submit" className="btn-primary" style={styles.submitBtn}>
+                {editingCategory ? 'Save Changes' : 'Create Category'}
+              </button>
             </form>
           </div>
           <div style={styles.list}>
             {categories.map(c => (
-              <div key={c.id} className="glass hover-card" style={styles.listItem}>
-                <h3>{c.name}</h3>
+              <div key={c.id} className="glass hover-card" style={{...styles.listItem, position: 'relative'}}>
+                <h3 style={{ paddingRight: '140px' }}>{c.name}</h3>
                 <p>{c.description}</p>
+                <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', gap: '8px' }}>
+                  <button 
+                    onClick={() => handleEditCategoryClick(c)}
+                    className="glass"
+                    style={{ border: '1px solid var(--primary)', color: 'var(--primary)', padding: '5px 15px', borderRadius: '8px', cursor: 'pointer', background: 'transparent' }}
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteCategory(c.id)}
+                    className="glass"
+                    style={{ border: '1px solid #ef4444', color: '#ef4444', padding: '5px 15px', borderRadius: '8px', cursor: 'pointer', background: 'transparent' }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {activeTab === 'events' && (
+      {activeTab === 'events' && !selectedEvent && (
         <div style={styles.section}>
           <div className="glass" style={styles.card}>
             <h2><CalendarPlus size={20} /> Add Event</h2>
@@ -232,91 +402,117 @@ const VendorDashboard = () => {
               </select>
 
               <input placeholder="Event Name" value={newEvent.name} onChange={e => setNewEvent({...newEvent, name: e.target.value})} required style={styles.input} />
-              <input placeholder="Location" value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} style={styles.input} />
+              <input placeholder="Description" value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} style={styles.input} />
+              <textarea placeholder="Details" value={newEvent.details} onChange={e => setNewEvent({...newEvent, details: e.target.value})} style={{...styles.input, minHeight: '100px'}} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <input placeholder="Location (Venue)" value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} style={styles.input} />
+                <input placeholder="State" value={newEvent.state} onChange={e => setNewEvent({...newEvent, state: e.target.value})} style={styles.input} />
+              </div>
+              <input placeholder="Address" value={newEvent.address} onChange={e => setNewEvent({...newEvent, address: e.target.value})} style={styles.input} />
               <input type="date" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} style={styles.input} />
               <button type="submit" className="btn-primary" style={styles.submitBtn}>Add Event</button>
             </form>
           </div>
-          <div style={styles.list}>
-            {events.map(e => (
-              <div key={e.id} className="glass hover-card" style={styles.listItem}>
-                <h3>{e.name}</h3>
-                <p>{e.location} - {e.date}</p>
+          <div>
+            {categories.map(c => {
+               const categoryEvents = events.filter(e => e.category === c.id);
+               if (categoryEvents.length === 0) return null;
+               return (
+                 <div key={c.id} style={{ marginBottom: '40px' }}>
+                   <h3 style={{ fontSize: '1.5rem', marginBottom: '15px', color: 'var(--primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>{c.name}</h3>
+                   <div style={styles.list}>
+                     {categoryEvents.map(e => (
+                       <div key={e.id} className="glass hover-card" style={{...styles.listItem, cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center'}} onClick={() => setSelectedEvent(e)}>
+                         <h4 style={{ fontSize: '1.2rem', marginBottom: '10px', color: 'var(--primary)' }}>{e.name}</h4>
+                         <p>{e.location} - {e.date}</p>
+                         <p style={{ color: 'var(--on-surface-variant)', marginTop: '10px' }}>Click to view details & gallery</p>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )
+            })}
+            
+            {events.filter(e => !categories.find(c => c.id === e.category)).length > 0 && (
+              <div style={{ marginBottom: '40px' }}>
+                 <h3 style={{ fontSize: '1.5rem', marginBottom: '15px', color: 'var(--primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>Uncategorized</h3>
+                 <div style={styles.list}>
+                   {events.filter(e => !categories.find(c => c.id === e.category)).map(e => (
+                     <div key={e.id} className="glass hover-card" style={{...styles.listItem, cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center'}} onClick={() => setSelectedEvent(e)}>
+                       <h4 style={{ fontSize: '1.2rem', marginBottom: '10px', color: 'var(--primary)' }}>{e.name}</h4>
+                       <p>{e.location} - {e.date}</p>
+                       <p style={{ color: 'var(--on-surface-variant)', marginTop: '10px' }}>Click to view details & gallery</p>
+                     </div>
+                   ))}
+                 </div>
               </div>
-            ))}
+            )}
+            
+            {events.length === 0 && (
+               <p style={{ color: 'var(--on-surface-variant)' }}>No portfolio events added yet.</p>
+            )}
           </div>
         </div>
       )}
 
-      {activeTab === 'gallery' && (
+      {activeTab === 'events' && selectedEvent && (
         <div style={styles.section}>
+          <button 
+            className="glass" 
+            style={{...styles.tabBtn, width: 'fit-content', display: 'flex', alignItems: 'center', gap: '8px'}} 
+            onClick={() => setSelectedEvent(null)}
+          >
+            <ArrowLeft size={18} /> Back to Events
+          </button>
+          
           <div className="glass" style={styles.card}>
-            <h2><ImageIcon size={20} /> Upload Media</h2>
-            <form onSubmit={handleUploadMedia} style={styles.form}>
-              <select value={newMedia.event} onChange={e => setNewMedia({...newMedia, event: e.target.value})} required style={styles.input}>
-                <option value="">Select Event</option>
-                {events.map(ev => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
-              </select>
-              <select value={newMedia.file_type} onChange={e => setNewMedia({...newMedia, file_type: e.target.value})} required style={styles.input}>
-                <option value="IMAGE">Image</option>
-                <option value="VIDEO">Video</option>
-              </select>
-              <input type="file" accept="image/*,video/*" onChange={e => setSelectedFile(e.target.files[0])} required style={styles.input} />
-              <input placeholder="Caption" value={newMedia.caption} onChange={e => setNewMedia({...newMedia, caption: e.target.value})} style={styles.input} />
-              <button type="submit" className="btn-primary" style={styles.submitBtn}>Upload</button>
-            </form>
-          </div>
-          <div style={styles.grid}>
-            {gallery.map(g => (
-              <div key={g.id} className="glass hover-card" style={styles.mediaCard}>
-                {g.file_type === 'IMAGE' ? (
-                  <img src={g.media_file} alt={g.caption} style={styles.mediaImage} />
-                ) : (
-                  <video src={g.media_file} controls style={styles.mediaImage} />
-                )}
-                <p style={{padding: '10px'}}>{g.caption || 'No caption'}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'invited_events' && isMediaVendor && (
-        <div style={styles.section}>
-          <div className="glass" style={styles.card}>
-            <h2><UploadCloud size={20} style={{ marginRight: '10px' }} /> Upload to Assigned Events</h2>
+            <h2 style={{ fontSize: '2rem', marginBottom: '10px', color: 'var(--primary)' }}>{selectedEvent.name}</h2>
             <p style={{ color: 'var(--on-surface-variant)', marginBottom: '20px' }}>
-              As a {vendorSubtype.toLowerCase()}, you can upload raw media directly to the events you have accepted. 
-              The system will automatically apply a "PREVIEW ONLY" watermark to your images for event owners and attendees.
+              {selectedEvent.date} {selectedEvent.location ? `• ${selectedEvent.location}` : ''} {selectedEvent.state ? `• ${selectedEvent.state}` : ''}
             </p>
-            <div style={styles.list}>
-              {assignments.filter(a => a.is_confirmed).map(a => (
-                <div key={a.id} className="glass hover-card" style={styles.listItem}>
-                  <h3 style={{ fontSize: '1.2rem', marginBottom: '10px' }}>{a.event_title || `Event ID: ${a.event}`}</h3>
-                  <p style={{ color: 'var(--primary)', fontWeight: 600, marginBottom: '20px' }}>Role: {a.role_display}</p>
-                  
-                  <div style={{ padding: '15px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={e => setInvitedMediaFile(e.target.files[0])} 
-                        style={styles.input} 
-                      />
-                      <button 
-                        onClick={() => handleUploadInvitedMedia(a.id)}
-                        disabled={!invitedMediaFile || uploadingInvited}
-                        className="btn-primary" 
-                        style={{...styles.submitBtn, opacity: (!invitedMediaFile || uploadingInvited) ? 0.5 : 1}}
-                      >
-                        {uploadingInvited ? 'Uploading...' : 'Upload Watermarked Media'}
-                      </button>
+            
+            {selectedEvent.description && <p style={{ fontSize: '1.1rem', fontWeight: 500, marginBottom: '10px' }}>{selectedEvent.description}</p>}
+            {selectedEvent.details && <p style={{ marginBottom: '20px' }}>{selectedEvent.details}</p>}
+            {selectedEvent.address && <p style={{ marginBottom: '20px', color: 'var(--on-surface-variant)' }}>Address: {selectedEvent.address}</p>}
+
+            <div style={{ marginTop: '40px' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
+                <UploadCloud size={24} color="var(--primary)" /> 
+                Upload Portfolio Media
+              </h3>
+              <div style={{ padding: '20px', background: 'rgba(0,0,0,0.2)', borderRadius: '16px' }}>
+                <form onSubmit={handleUploadMedia} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  <select value={newMedia.file_type} onChange={e => setNewMedia({...newMedia, file_type: e.target.value})} required style={styles.input}>
+                    <option value="IMAGE">Image</option>
+                    <option value="VIDEO">Video</option>
+                  </select>
+                  <input type="file" accept="image/*,video/*" multiple onChange={e => setSelectedFiles(e.target.files)} required style={styles.input} />
+                  <input placeholder="Caption (applied to all)" value={newMedia.caption} onChange={e => setNewMedia({...newMedia, caption: e.target.value})} style={styles.input} />
+                  <button type="submit" disabled={uploadingInvited} className="btn-primary" style={{...styles.submitBtn, opacity: uploadingInvited ? 0.5 : 1}}>
+                    {uploadingInvited ? <Loader2 className="spinner" size={20} /> : `Upload ${selectedFiles.length > 0 ? selectedFiles.length : ''} Media`}
+                  </button>
+                </form>
+              </div>
+
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '40px', marginBottom: '15px' }}>
+                <ImageIcon size={24} color="var(--primary)" /> 
+                Event Gallery
+              </h3>
+              {(!selectedEvent.media || selectedEvent.media.length === 0) ? (
+                <p style={{ color: 'var(--on-surface-variant)' }}>No media uploaded yet.</p>
+              ) : (
+                <div style={styles.grid}>
+                  {selectedEvent.media.map(g => (
+                    <div key={g.id} className="glass hover-card" style={styles.mediaCard}>
+                      {g.file_type === 'IMAGE' ? (
+                        <img src={g.media_file} alt={g.caption} style={styles.mediaImage} />
+                      ) : (
+                        <video src={g.media_file} controls style={styles.mediaImage} />
+                      )}
+                      <p style={{padding: '10px'}}>{g.caption || 'No caption'}</p>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-              {assignments.filter(a => a.is_confirmed).length === 0 && (
-                <p>You have no confirmed event assignments to upload to.</p>
               )}
             </div>
           </div>
@@ -336,9 +532,9 @@ const styles = {
   card: { padding: '30px', borderRadius: '24px' },
   form: { display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' },
   input: { padding: '15px', borderRadius: '12px', border: '1px solid var(--glass-border)', backgroundColor: 'var(--surface)', color: 'var(--on-surface)', fontSize: '1rem', outline: 'none' },
-  submitBtn: { padding: '15px', borderRadius: '12px', fontSize: '1rem', cursor: 'pointer' },
+  submitBtn: { padding: '15px', borderRadius: '12px', fontSize: '1rem', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' },
   list: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' },
-  listItem: { padding: '20px', borderRadius: '16px' },
+  listItem: { padding: '20px', borderRadius: '16px', transition: 'all 0.3s ease' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' },
   mediaCard: { borderRadius: '16px', overflow: 'hidden' },
   mediaImage: { width: '100%', height: '200px', objectFit: 'cover' }

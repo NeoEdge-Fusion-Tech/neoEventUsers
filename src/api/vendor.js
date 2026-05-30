@@ -4,6 +4,8 @@ export const vendorService = {
   getVendorTypes: () => API.get('events/vendors/types/'),
   getCategories: () => API.get('vendors/categories/'),
   createCategory: (data) => API.post('vendors/categories/', data),
+  updateCategory: (id, data) => API.patch(`vendors/categories/${id}/`, data),
+  deleteCategory: (id) => API.delete(`vendors/categories/${id}/`),
   
   getEvents: () => API.get('vendors/events/'),
   createEvent: (data) => API.post('vendors/events/', data),
@@ -19,7 +21,8 @@ export const vendorService = {
 
   getMyAssignments: () => API.get('events/vendors/my-assignments/'),
   respondToInvite: (code, accept) => API.post(`events/invitations/${code}/respond/`, { accept }),
-  uploadInvitedEventMedia: (assignmentId, data) => API.post(`events/vendors/assignments/${assignmentId}/media/`, data, {
+  uploadInvitedEventMedia: (assignmentId, formData) => API.post(`events/vendors/assignments/${assignmentId}/media/`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
-  })
+  }),
+  getInvitedEventMedia: (assignmentId) => API.get(`events/vendors/assignments/${assignmentId}/media/`),
 };

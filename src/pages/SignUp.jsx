@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { authService } from '../api/auth';
 import { vendorService } from '../api/vendor';
-import { User, Mail, Lock, Phone, Camera, Loader2, ArrowLeft } from 'lucide-react';
+import { User, Mail, Lock, Phone, Camera, Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { getNames } from 'country-list';
 
 const COUNTRIES = getNames();
@@ -21,6 +21,8 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [vendorTypes, setVendorTypes] = useState([]);
   const [customType, setCustomType] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (type === 'vendor') {
@@ -213,11 +215,21 @@ const Signup = () => {
           <div style={styles.inputRow}>
             <div style={styles.field}>
               <label style={styles.label}>Password</label>
-              <input type="password" name="password" onChange={handleChange} required style={styles.input} />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input type={showPassword ? "text" : "password"} name="password" onChange={handleChange} required style={{...styles.input, width: '100%', paddingRight: '40px'}} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--on-surface-variant)', display: 'flex', alignItems: 'center' }}>
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
             <div style={styles.field}>
               <label style={styles.label}>Confirm Password</label>
-              <input type="password" name="password_confirm" onChange={handleChange} required style={styles.input} />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input type={showConfirmPassword ? "text" : "password"} name="password_confirm" onChange={handleChange} required style={{...styles.input, width: '100%', paddingRight: '40px'}} />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--on-surface-variant)', display: 'flex', alignItems: 'center' }}>
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
           </div>
 
