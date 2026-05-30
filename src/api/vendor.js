@@ -3,14 +3,16 @@ import API from './axios';
 export const vendorService = {
   getVendorTypes: () => API.get('events/vendors/types/'),
   getCategories: () => API.get('vendors/categories/'),
-  createCategory: (data) => API.post('vendors/categories/', data),
-  updateCategory: (id, data) => API.patch(`vendors/categories/${id}/`, data),
+  createCategory: (data, config = {}) => API.post('vendors/categories/', data, config),
+  updateCategory: (id, data, config = {}) => API.patch(`vendors/categories/${id}/`, data, config),
   deleteCategory: (id) => API.delete(`vendors/categories/${id}/`),
   
   getEvents: () => API.get('vendors/events/'),
   createEvent: (data) => API.post('vendors/events/', data),
+  deleteEvent: (id) => API.delete(`vendors/events/${id}/`),
   
   getGallery: () => API.get('vendors/gallery/'),
+  deleteGalleryMedia: (id) => API.delete(`vendors/gallery/${id}/`),
   uploadMedia: (data) => API.post('vendors/gallery/', data, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
@@ -25,4 +27,6 @@ export const vendorService = {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
   getInvitedEventMedia: (assignmentId) => API.get(`events/vendors/assignments/${assignmentId}/media/`),
+  getBusinessProfile: () => API.get('vendors/business/'),
+  updateBusinessProfile: (data) => API.patch('vendors/business/', data),
 };

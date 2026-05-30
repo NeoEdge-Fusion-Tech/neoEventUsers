@@ -4,7 +4,7 @@ import api from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
 
 const ProfileSettings = () => {
-  const { user: authUser } = useContext(AuthContext);
+  const { user: authUser, setUser: setAuthUser } = useContext(AuthContext);
   const [user, setUser] = useState(authUser);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -12,6 +12,13 @@ const ProfileSettings = () => {
   const [isError, setIsError] = useState(false);
   
   const getFullName = (u) => u ? (`${u.first_name || ''} ${u.last_name || ''}`.trim() || (u.username && !u.username.includes('@') ? u.username : '')) : '';
+
+  const getProfileImage = (u) => {
+    if (!u) return null;
+    if (u.role === 'VENDOR') return u.vendor_profile?.profile_image;
+    if (u.role === 'OWNER') return u.owner_profile?.organisation_logo;
+    return u.profile_image;
+  };
 
   const [formData, setFormData] = useState({
     username: getFullName(authUser),
@@ -42,15 +49,33 @@ const ProfileSettings = () => {
     if (profileImage) data.append('profile_image', profileImage);
     if (referenceImage) data.append('reference_image', referenceImage);
 
+    let endpoint = 'profile/';
+    if (user?.role === 'VENDOR') endpoint = 'vendor/profile/';
+    if (user?.role === 'OWNER') endpoint = 'me/';
+
     try {
-      const response = await api.patch('/accounts/profile/', data, {
+      const response = await api.patch(endpoint, data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
+      // Merge the updated profile data into the current user state
+      const updatedProfile = response.data;
+      let updatedUser = { ...user };
+      
+      if (user?.role === 'VENDOR') {
+        updatedUser.vendor_profile = { ...updatedUser.vendor_profile, ...updatedProfile };
+        if (updatedProfile.username) updatedUser.username = updatedProfile.username;
+      } else if (user?.role === 'OWNER') {
+        updatedUser.owner_profile = { ...updatedUser.owner_profile, ...updatedProfile };
+        if (updatedProfile.username) updatedUser.username = updatedProfile.username;
+      } else {
+        updatedUser = { ...updatedUser, ...updatedProfile };
+      }
+      
       // Update local storage and state
-      const updatedUser = response.data;
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setUser(updatedUser);
+      setAuthUser(updatedUser);
       
       setMessage('Identity Synchronized Successfully');
       setTimeout(() => setMessage(''), 4000);
@@ -113,7 +138,7 @@ const ProfileSettings = () => {
                   <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Profile Image</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
                     <div style={{ width: '130px', height: '130px', borderRadius: '32px', background: 'var(--surface-highest)', overflow: 'hidden', border: '2px solid var(--primary)', position: 'relative' }}>
-                      {user?.profile_image ? <img src={user.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><User size={48} color="var(--primary)" /></div>}
+                      {getProfileImage(user) ? <img src={getProfileImage(user)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><User size={48} color="var(--primary)" /></div>}
                     </div>
                     <label className="btn-primary" style={{ padding: '1.2rem 2.5rem', borderRadius: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', fontWeight: 900, fontSize: '0.95rem' }}>
                       <Camera size={22} /> {profileImage ? 'IMAGE STAGED' : 'CHANGE AVATAR'}
@@ -137,6 +162,7 @@ const ProfileSettings = () => {
             </div>
           </section>
 
+          {user?.role === 'ATTENDEE' && (
           <aside style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
             <div className="glass" style={{ padding: '3.5rem', borderRadius: '40px', border: '1px solid var(--primary)', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '180px', height: '180px', background: 'var(--primary)', opacity: 0.1, borderRadius: '50%', filter: 'blur(50px)' }}></div>
@@ -183,6 +209,7 @@ const ProfileSettings = () => {
               </div>
             </div>
           </aside>
+          )}
       </div>
     </div>
   );

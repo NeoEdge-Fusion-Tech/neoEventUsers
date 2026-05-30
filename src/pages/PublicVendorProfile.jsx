@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { vendorService } from '../api/vendor';
 import { MapPin, Mail, Phone, Loader2, CheckCircle, Disc, Camera, Image as ImageIcon, ChevronRight, X, ArrowLeft } from 'lucide-react';
+import defaultCover from '../assets/default_category_cover.png';
 
 const PublicVendorProfile = () => {
-  const { id } = useParams();
+  const { idOrSlug } = useParams();
+  const id = idOrSlug; // Keeping the variable name id for backwards compatibility in the component
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -91,13 +93,21 @@ const PublicVendorProfile = () => {
         {profile.gallery_categories.map(category => {
           const eventCount = category.events?.length || 0;
           return (
-            <div key={category.id} className="glass hover-card" style={styles.card} onClick={() => goToCategory(category)}>
-              <div style={styles.cardIconBox}>
-                <ImageIcon size={32} color="var(--primary)" />
+            <div key={category.id} className="glass hover-card" style={{...styles.card, padding: 0, overflow: 'hidden'}} onClick={() => goToCategory(category)}>
+              <div style={{ height: '160px', width: '100%', position: 'relative', background: category.cover_image ? 'transparent' : 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,177,115,0.1))' }}>
+                {category.cover_image ? (
+                  <img src={category.cover_image} alt={category.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <img src={defaultCover} alt="Default Cover" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
+                )}
+                <div style={{ position: 'absolute', top: '15px', right: '15px', background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '6px 14px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 700, backdropFilter: 'blur(5px)' }}>
+                  {eventCount} Event{eventCount !== 1 ? 's' : ''}
+                </div>
               </div>
-              <h3 style={styles.cardTitle}>{category.name}</h3>
-              {category.description && <p style={styles.cardDesc}>{category.description}</p>}
-              <div style={styles.cardBadge}>{eventCount} Event{eventCount !== 1 ? 's' : ''}</div>
+              <div style={{ padding: '25px' }}>
+                <h3 style={styles.cardTitle}>{category.name}</h3>
+                {category.description && <p style={styles.cardDesc}>{category.description}</p>}
+              </div>
             </div>
           );
         })}
@@ -160,7 +170,7 @@ const PublicVendorProfile = () => {
         {selectedEvent.media.map(media => (
           <div key={media.id} style={styles.masonryItem} onClick={() => setLightboxMedia(media)}>
             {media.file_type === 'IMAGE' ? (
-              <img src={media.media_file} alt={media.caption} style={styles.masonryImage} className="zoom-on-hover" />
+              <img src={media.media_file} alt={media.caption} style={{...styles.masonryImage, pointerEvents: 'none', userSelect: 'none'}} className="zoom-on-hover" onContextMenu={(e) => e.preventDefault()} draggable="false" />
             ) : (
               <video src={media.media_file} controls style={styles.masonryImage} />
             )}
@@ -208,7 +218,7 @@ const PublicVendorProfile = () => {
         {/* Dynamic Portfolio Section */}
         <div style={styles.portfolioSection}>
           <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>NeoEvent <span style={{ color: 'var(--primary)' }}>Portfolio</span></h2>
+            <h2 style={styles.sectionTitle}>{profile.business_name} <span style={{ color: 'var(--primary)' }}>Portfolio</span></h2>
             <div style={styles.titleUnderline}></div>
           </div>
 
@@ -230,7 +240,7 @@ const PublicVendorProfile = () => {
           <button style={styles.closeBtn} onClick={() => setLightboxMedia(null)}><X size={32} /></button>
           <div style={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
             {lightboxMedia.file_type === 'IMAGE' ? (
-              <img src={lightboxMedia.media_file} alt={lightboxMedia.caption} style={styles.lightboxImage} />
+              <img src={lightboxMedia.media_file} alt={lightboxMedia.caption} style={{...styles.lightboxImage, pointerEvents: 'none', userSelect: 'none'}} onContextMenu={(e) => e.preventDefault()} draggable="false" />
             ) : (
               <video src={lightboxMedia.media_file} controls autoPlay style={styles.lightboxImage} />
             )}

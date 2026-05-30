@@ -67,7 +67,11 @@ function App() {
               />
               
               <Route
-                path="/vendor/profile/:id"
+                path="/vendor/profile/:idOrSlug"
+                element={<PublicVendorProfile />}
+              />
+              <Route
+                path="/p/:idOrSlug"
                 element={<PublicVendorProfile />}
               />
 

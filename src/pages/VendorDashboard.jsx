@@ -10,10 +10,11 @@ const VendorDashboard = () => {
   const [gallery, setGallery] = useState([]);
   const [systemEvents, setSystemEvents] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [businessProfile, setBusinessProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('assignments');
 
-  const [newCategory, setNewCategory] = useState({ name: '', description: '' });
+  const [newCategory, setNewCategory] = useState({ name: '', description: '', cover_image: null });
   const [editingCategory, setEditingCategory] = useState(null);
   const [newEvent, setNewEvent] = useState({ category: '', system_event: '', name: '', description: '', details: '', location: '', address: '', state: '', date: '' });
   const [newMedia, setNewMedia] = useState({ event: '', file_type: 'IMAGE', caption: '' });
@@ -28,7 +29,7 @@ const VendorDashboard = () => {
   const vendorSubtype = user?.vendor_profile?.subtype || '';
   const isMediaVendor = vendorSubtype === 'PHOTOGRAPHER' || vendorSubtype === 'VIDEOGRAPHER';
   
-  const tabs = ['assignments', 'categories', 'events'];
+  const tabs = ['assignments', 'categories', 'events', 'settings'];
 
   useEffect(() => {
     fetchData();
@@ -37,18 +38,20 @@ const VendorDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [catRes, evRes, galRes, sysEvRes, asgRes] = await Promise.all([
+      const [catRes, evRes, galRes, sysEvRes, asgRes, busRes] = await Promise.all([
         vendorService.getCategories(),
         vendorService.getEvents(),
         vendorService.getGallery(),
         vendorService.getAllSystemEvents().catch(() => ({ data: [] })),
-        vendorService.getMyAssignments().catch(() => ({ data: [] }))
+        vendorService.getMyAssignments().catch(() => ({ data: [] })),
+        vendorService.getBusinessProfile().catch(() => ({ data: null }))
       ]);
       const eventsData = evRes.data.results || evRes.data || [];
       setCategories(catRes.data.results || catRes.data || []);
       setEvents(eventsData);
       setSystemEvents(sysEvRes.data.results || sysEvRes.data || []);
       setAssignments(asgRes.data.results || asgRes.data || []);
+      setBusinessProfile(busRes.data);
 
       if (selectedEvent) {
         const updatedEvent = eventsData.find(e => e.id === selectedEvent.id);
@@ -80,13 +83,22 @@ const VendorDashboard = () => {
   const handleSaveCategory = async (e) => {
     e.preventDefault();
     try {
+      const formData = new FormData();
+      formData.append('name', newCategory.name);
+      if (newCategory.description) formData.append('description', newCategory.description);
+      if (newCategory.cover_image instanceof File) formData.append('cover_image', newCategory.cover_image);
+
+      const config = { headers: { 'Content-Type': 'multipart/form-data' } };
+
       if (editingCategory) {
-        await vendorService.updateCategory(editingCategory.id, newCategory);
+        await vendorService.updateCategory(editingCategory.id, formData, config);
         setEditingCategory(null);
       } else {
-        await vendorService.createCategory(newCategory);
+        await vendorService.createCategory(formData, config);
       }
-      setNewCategory({ name: '', description: '' });
+      setNewCategory({ name: '', description: '', cover_image: null });
+      const fileInput = document.getElementById('category-cover-input');
+      if (fileInput) fileInput.value = '';
       fetchData();
     } catch (err) { 
       console.error(err);
@@ -100,13 +112,15 @@ const VendorDashboard = () => {
 
   const handleEditCategoryClick = (cat) => {
     setEditingCategory(cat);
-    setNewCategory({ name: cat.name, description: cat.description || '' });
+    setNewCategory({ name: cat.name, description: cat.description || '', cover_image: null });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cancelEditCategory = () => {
     setEditingCategory(null);
-    setNewCategory({ name: '', description: '' });
+    setNewCategory({ name: '', description: '', cover_image: null });
+    const fileInput = document.getElementById('category-cover-input');
+    if (fileInput) fileInput.value = '';
   };
 
   const handleDeleteCategory = async (id) => {
@@ -126,9 +140,35 @@ const VendorDashboard = () => {
     e.preventDefault();
     try {
       await vendorService.createEvent(newEvent);
-      setNewEvent({ category: '', system_event: '', name: '', location: '', date: '' });
+      setNewEvent({ category: '', system_event: '', name: '', location: '', address: '', state: '', date: '', details: '', description: '' });
       fetchData();
     } catch (err) { console.error(err); }
+  };
+
+  const handleDeleteEvent = async (e, id) => {
+    e.stopPropagation();
+    if (window.confirm("Are you sure you want to delete this event and all its media?")) {
+      try {
+        await vendorService.deleteEvent(id);
+        if (selectedEvent && selectedEvent.id === id) setSelectedEvent(null);
+        fetchData();
+      } catch (err) {
+        console.error(err);
+        alert("Failed to delete event.");
+      }
+    }
+  };
+
+  const handleDeleteMedia = async (id) => {
+    if (window.confirm("Are you sure you want to delete this media?")) {
+      try {
+        await vendorService.deleteGalleryMedia(id);
+        fetchData();
+      } catch (err) {
+        console.error(err);
+        alert("Failed to delete media.");
+      }
+    }
   };
 
   const handleSystemEventSelect = (e) => {
@@ -209,7 +249,7 @@ const VendorDashboard = () => {
             assignments: 'Event Assignments',
             categories: 'Categories',
             events: 'Events',
-            gallery: 'Gallery'
+            settings: 'Settings'
           };
           return (
             <button 
@@ -354,6 +394,14 @@ const VendorDashboard = () => {
             <form onSubmit={handleSaveCategory} style={{...styles.form, marginTop: 0}}>
               <input placeholder="Category Name (e.g. Weddings)" value={newCategory.name} onChange={e => setNewCategory({...newCategory, name: e.target.value})} required style={styles.input} />
               <input placeholder="Description" value={newCategory.description} onChange={e => setNewCategory({...newCategory, description: e.target.value})} style={styles.input} />
+              <label style={{ fontSize: '0.9rem', color: 'var(--on-surface-variant)', marginBottom: '-10px' }}>Cover Image (Optional)</label>
+              <input 
+                id="category-cover-input"
+                type="file" 
+                accept="image/*" 
+                onChange={e => setNewCategory({...newCategory, cover_image: e.target.files[0]})} 
+                style={styles.input} 
+              />
               <button type="submit" className="btn-primary" style={styles.submitBtn}>
                 {editingCategory ? 'Save Changes' : 'Create Category'}
               </button>
@@ -422,8 +470,17 @@ const VendorDashboard = () => {
                    <h3 style={{ fontSize: '1.5rem', marginBottom: '15px', color: 'var(--primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>{c.name}</h3>
                    <div style={styles.list}>
                      {categoryEvents.map(e => (
-                       <div key={e.id} className="glass hover-card" style={{...styles.listItem, cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center'}} onClick={() => setSelectedEvent(e)}>
-                         <h4 style={{ fontSize: '1.2rem', marginBottom: '10px', color: 'var(--primary)' }}>{e.name}</h4>
+                       <div key={e.id} className="glass hover-card" style={{...styles.listItem, cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative'}} onClick={() => setSelectedEvent(e)}>
+                         <div style={{ position: 'absolute', top: '15px', right: '15px' }}>
+                           <button 
+                             onClick={(evt) => handleDeleteEvent(evt, e.id)}
+                             className="glass"
+                             style={{ border: '1px solid #ef4444', color: '#ef4444', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', background: 'transparent', fontSize: '0.85rem' }}
+                           >
+                             Delete
+                           </button>
+                         </div>
+                         <h4 style={{ fontSize: '1.2rem', marginBottom: '10px', color: 'var(--primary)', paddingRight: '60px' }}>{e.name}</h4>
                          <p>{e.location} - {e.date}</p>
                          <p style={{ color: 'var(--on-surface-variant)', marginTop: '10px' }}>Click to view details & gallery</p>
                        </div>
@@ -436,10 +493,19 @@ const VendorDashboard = () => {
             {events.filter(e => !categories.find(c => c.id === e.category)).length > 0 && (
               <div style={{ marginBottom: '40px' }}>
                  <h3 style={{ fontSize: '1.5rem', marginBottom: '15px', color: 'var(--primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>Uncategorized</h3>
-                 <div style={styles.list}>
+                  <div style={styles.list}>
                    {events.filter(e => !categories.find(c => c.id === e.category)).map(e => (
-                     <div key={e.id} className="glass hover-card" style={{...styles.listItem, cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center'}} onClick={() => setSelectedEvent(e)}>
-                       <h4 style={{ fontSize: '1.2rem', marginBottom: '10px', color: 'var(--primary)' }}>{e.name}</h4>
+                     <div key={e.id} className="glass hover-card" style={{...styles.listItem, cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative'}} onClick={() => setSelectedEvent(e)}>
+                       <div style={{ position: 'absolute', top: '15px', right: '15px' }}>
+                         <button 
+                           onClick={(evt) => handleDeleteEvent(evt, e.id)}
+                           className="glass"
+                           style={{ border: '1px solid #ef4444', color: '#ef4444', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', background: 'transparent', fontSize: '0.85rem' }}
+                         >
+                           Delete
+                         </button>
+                       </div>
+                       <h4 style={{ fontSize: '1.2rem', marginBottom: '10px', color: 'var(--primary)', paddingRight: '60px' }}>{e.name}</h4>
                        <p>{e.location} - {e.date}</p>
                        <p style={{ color: 'var(--on-surface-variant)', marginTop: '10px' }}>Click to view details & gallery</p>
                      </div>
@@ -503,17 +569,93 @@ const VendorDashboard = () => {
               ) : (
                 <div style={styles.grid}>
                   {selectedEvent.media.map(g => (
-                    <div key={g.id} className="glass hover-card" style={styles.mediaCard}>
+                    <div key={g.id} className="glass hover-card" style={{...styles.mediaCard, position: 'relative'}}>
                       {g.file_type === 'IMAGE' ? (
                         <img src={g.media_file} alt={g.caption} style={styles.mediaImage} />
                       ) : (
                         <video src={g.media_file} controls style={styles.mediaImage} />
                       )}
-                      <p style={{padding: '10px'}}>{g.caption || 'No caption'}</p>
+                      <div style={{ padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <p style={{ flex: 1, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{g.caption || 'No caption'}</p>
+                        <button 
+                          onClick={() => handleDeleteMedia(g.id)}
+                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 600, padding: '5px' }}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {activeTab === 'settings' && (
+        <div style={styles.section}>
+          <div className="glass" style={styles.card}>
+            <h2 style={{ marginBottom: '20px' }}>Portfolio Settings</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+              <div>
+                <label style={{ fontWeight: 600, display: 'block', marginBottom: '10px' }}>Business Name (Public Portfolio Name)</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <input 
+                    type="text" 
+                    placeholder="Business Name" 
+                    defaultValue={businessProfile?.business_name || ''} 
+                    id="business-name-input"
+                    style={{...styles.input, flex: 1}} 
+                  />
+                  <button 
+                    className="btn-primary" 
+                    style={{ padding: '15px 25px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                    onClick={async () => {
+                      const val = document.getElementById('business-name-input').value;
+                      try {
+                        await vendorService.updateBusinessProfile({ business_name: val });
+                        alert('Business name updated successfully!');
+                      } catch (err) {
+                        console.error(err);
+                        alert('Failed to update business name.');
+                      }
+                    }}
+                  >
+                    Save Name
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 600, display: 'block', marginBottom: '10px' }}>Custom Portfolio URL</label>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <span style={{ color: 'var(--on-surface-variant)' }}>{window.location.origin}/p/</span>
+                <input 
+                  type="text" 
+                  placeholder="custom-url" 
+                  defaultValue={businessProfile?.custom_url || ''} 
+                  id="custom-url-input"
+                  style={{...styles.input, flex: 1}} 
+                />
+                <button 
+                  className="btn-primary" 
+                  style={{ padding: '15px 25px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                  onClick={async () => {
+                    const val = document.getElementById('custom-url-input').value;
+                    try {
+                      await vendorService.updateBusinessProfile({ custom_url: val });
+                      alert('Custom URL updated successfully!');
+                    } catch (err) {
+                      console.error(err);
+                      alert('Failed to update URL. It might already be taken.');
+                    }
+                  }}
+                >
+                  Save URL
+                </button>
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>Set a custom URL to share your portfolio easily. Use letters, numbers, and hyphens only.</p>
+              </div>
             </div>
           </div>
         </div>
