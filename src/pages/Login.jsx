@@ -99,8 +99,15 @@ const LoginPage = () => {
             </div>
           </div>
 
+          <div style={{ textAlign: 'right', marginTop: '-10px' }}>
+            <Link to="/forgot-password" style={{ color: 'var(--primary)', fontSize: '0.85rem', textDecoration: 'none' }}>
+              Forgot password?
+            </Link>
+          </div>
+
           <button 
             type="submit" 
+
             disabled={authLoading} 
             className="btn-primary" 
             style={styles.submitBtn}

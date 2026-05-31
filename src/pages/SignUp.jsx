@@ -74,7 +74,7 @@ const Signup = () => {
         } = formData;
         await authService.registerOwner(ownerData);
       }
-      navigate('/login', { state: { message: "Account created! Please login." } });
+      navigate('/verify-email', { state: { email: formData.email } });
     } catch (err) {
       setError(err.response?.data || { detail: "Something went wrong" });
     } finally {

@@ -23,6 +23,9 @@ import ProfileSettings from './pages/ProfileSettings';
 import MyTickets from './pages/MyTickets';
 import Registration from './pages/Registration';
 import OrganizerEventDetails from './pages/OrganizerEventDetails';
+import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import EventConsole from './pages/EventConsole';
 import PhotoGallery from './pages/PhotoGallery';
 import PaymentVerify from './pages/PaymentVerify';
@@ -56,6 +59,21 @@ function App() {
               <Route
                 path="/signup/:type"
                 element={<Signup />}
+              />
+
+              <Route
+                path="/verify-email"
+                element={<VerifyEmail />}
+              />
+              
+              <Route
+                path="/forgot-password"
+                element={<ForgotPassword />}
+              />
+              
+              <Route
+                path="/reset-password"
+                element={<ResetPassword />}
               />
 
               <Route

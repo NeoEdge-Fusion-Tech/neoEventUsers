@@ -160,6 +160,75 @@ const ProfileSettings = () => {
                 </button>
               </form>
             </div>
+
+            <div className="glass" style={{ padding: '4rem', borderRadius: '40px', marginTop: '3rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '3rem' }}>
+                 <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--accent-glow)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--primary)', border: '1px solid var(--glass-border)' }}>
+                    <Lock size={28} strokeWidth={2.5} />
+                 </div>
+                 <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.5px' }}>Security</h2>
+              </div>
+              
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const oldPassword = formData.get('old_password');
+                const newPassword = formData.get('new_password');
+                const newPasswordConfirm = formData.get('new_password_confirm');
+                
+                if (newPassword !== newPasswordConfirm) {
+                   setMessage('New passwords do not match');
+                   setIsError(true);
+                   return;
+                }
+                
+                setUpdating(true);
+                try {
+                  await api.post('auth/password/change/', {
+                    old_password: oldPassword,
+                    new_password: newPassword,
+                    new_password_confirm: newPasswordConfirm
+                  });
+                  setMessage('Password changed successfully');
+                  setIsError(false);
+                  e.target.reset();
+                } catch (err) {
+                  setMessage(err.response?.data?.detail || 'Failed to change password');
+                  setIsError(true);
+                } finally {
+                  setUpdating(false);
+                }
+              }} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Current Password</label>
+                  <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
+                    <Lock size={20} color="var(--on-surface-variant)" />
+                    <input name="old_password" type="password" required style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>New Password</label>
+                  <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
+                    <Lock size={20} color="var(--primary)" />
+                    <input name="new_password" type="password" required style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none' }} />
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Confirm New Password</label>
+                  <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
+                    <Lock size={20} color="var(--primary)" />
+                    <input name="new_password_confirm" type="password" required style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none' }} />
+                  </div>
+                </div>
+
+                <button type="submit" disabled={updating} className="btn-primary" style={{ marginTop: '1rem', padding: '1.5rem', borderRadius: '22px', fontSize: '1.15rem', fontWeight: 900, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1.2rem', background: 'transparent', border: '2px solid var(--primary)', color: 'var(--primary)' }}>
+                  {updating ? <Loader2 className="animate-spin" size={26} /> : <Lock size={26} />}
+                  {updating ? 'UPDATING...' : 'CHANGE PASSWORD'}
+                </button>
+              </form>
+            </div>
           </section>
 
           {user?.role === 'ATTENDEE' && (
