@@ -26,6 +26,7 @@ import OrganizerEventDetails from './pages/OrganizerEventDetails';
 import EventConsole from './pages/EventConsole';
 import PhotoGallery from './pages/PhotoGallery';
 import PaymentVerify from './pages/PaymentVerify';
+import EventUpload from './pages/EventUpload';
 
 function App() {
   return (
@@ -140,6 +141,15 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['OWNER']}>
                     <OrganizerEventDetails />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/upload/:eventId"
+                element={
+                  <ProtectedRoute allowedRoles={['VENDOR', 'OWNER']}>
+                    <EventUpload />
                   </ProtectedRoute>
                 }
               />
