@@ -30,6 +30,7 @@ import EventConsole from './pages/EventConsole';
 import PhotoGallery from './pages/PhotoGallery';
 import PaymentVerify from './pages/PaymentVerify';
 import EventUpload from './pages/EventUpload';
+import NeoAdminDashboard from './pages/NeoAdminDashboard';
 
 function App() {
   return (
@@ -168,6 +169,15 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['VENDOR', 'OWNER']}>
                     <EventUpload />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/neo-admin"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <NeoAdminDashboard />
                   </ProtectedRoute>
                 }
               />

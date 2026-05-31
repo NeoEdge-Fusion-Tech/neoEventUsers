@@ -3,7 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Camera, Mail, Plus, Loader2, ArrowLeft, CheckCircle, Clock,
   ShieldCheck, UserPlus, Info, Calendar, MapPin, Search, Ticket,
-  DollarSign, Check, X, FileText, Group, User, Briefcase, Edit, Trash2, Save
+  DollarSign, Check, X, FileText, Group, User, Briefcase, Edit, Trash2, Save,
+  Image, Download, Filter
 } from 'lucide-react';
 import api from '../api/axios';
 import { vendorService } from '../api/vendor';
@@ -52,6 +53,12 @@ const OrganizerEventDetails = () => {
   const [expandedRows, setExpandedRows] = useState({});
   const toggleRow = (id) => setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
 
+  // Gallery state
+  const [galleryData, setGalleryData] = useState({ photos: [], photographers: [], total: 0 });
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [galleryPhotographer, setGalleryPhotographer] = useState('');
+  const [lightboxPhoto, setLightboxPhoto] = useState(null);
+
   // Edit event state
   const [editForm, setEditForm] = useState(null);
   const [editTickets, setEditTickets] = useState([]);
@@ -65,12 +72,29 @@ const OrganizerEventDetails = () => {
     fetchVendorTypes();
   }, [eventId]);
 
+  useEffect(() => {
+    if (activeTab === 'gallery') fetchOwnerGallery(galleryPhotographer);
+  }, [activeTab]);
+
   const fetchVendorTypes = async () => {
     try {
       const res = await vendorService.getVendorTypes();
       setVendorTypes(res.data || []);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const fetchOwnerGallery = async (photographerId = '') => {
+    setGalleryLoading(true);
+    try {
+      const params = photographerId ? `?photographer=${photographerId}` : '';
+      const res = await api.get(`/photos/events/${eventId}/owner-gallery/${params}`);
+      setGalleryData(res.data);
+    } catch (err) {
+      console.error('Failed to load gallery', err);
+    } finally {
+      setGalleryLoading(false);
     }
   };
 
@@ -381,7 +405,8 @@ const OrganizerEventDetails = () => {
           ['participants', `Participants (${registrations.length})`],
           ['checked_in', `Checked In Attendee (${checkedInCount})`],
           ['vendors', `Vendors (${(event.vendors || []).length})`],
-          ['edit', 'Edit Event']
+          ['edit', 'Edit Event'],
+          ['gallery', `Gallery (${galleryData.total})`]
         ].map(([tab, label]) => (
           <button
             key={tab}
@@ -781,6 +806,69 @@ const OrganizerEventDetails = () => {
             </div>
           )}
 
+
+          {activeTab === 'gallery' && (
+            <div className="glass" style={{ padding: '3rem', borderRadius: '32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <Image size={22} color="var(--primary)" />
+                  <h2 style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.5px' }}>Event Gallery</h2>
+                  <span style={{ background: 'rgba(255,177,115,0.1)', color: 'var(--primary)', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 800 }}>{galleryData.total} photos</span>
+                </div>
+                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                  <Filter size={16} color="var(--primary)" />
+                  <select value={galleryPhotographer} onChange={e => { setGalleryPhotographer(e.target.value); fetchOwnerGallery(e.target.value); }} style={{ padding: '0.6rem 1rem', borderRadius: '10px', background: 'var(--surface-highest)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)', fontWeight: 600, fontSize: '0.9rem', outline: 'none' }}>
+                    <option value="">All Photographers ({galleryData.total})</option>
+                    {galleryData.photographers.map(p => (<option key={p.id} value={p.id}>{p.full_name} ({p.photo_count})</option>))}
+                  </select>
+                </div>
+              </div>
+
+              {galleryData.photographers.length > 0 && (
+                <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+                  <button onClick={() => { setGalleryPhotographer(''); fetchOwnerGallery(''); }} style={{ padding: '0.4rem 1rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 700, background: !galleryPhotographer ? 'var(--primary)' : 'rgba(255,177,115,0.08)', color: !galleryPhotographer ? '#080C14' : 'var(--primary)', border: '1px solid var(--primary)', cursor: 'pointer' }}>All</button>
+                  {galleryData.photographers.map(p => (
+                    <button key={p.id} onClick={() => { setGalleryPhotographer(p.id); fetchOwnerGallery(p.id); }} style={{ padding: '0.4rem 1rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 700, background: galleryPhotographer === p.id ? 'var(--primary)' : 'rgba(255,177,115,0.08)', color: galleryPhotographer === p.id ? '#080C14' : 'var(--primary)', border: '1px solid var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Camera size={12} />{p.full_name} · {p.photo_count}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {galleryLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><Loader2 className="animate-spin" size={36} color="var(--primary)" /></div>
+              ) : galleryData.photos.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--on-surface-variant)' }}>
+                  <Camera size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+                  <p style={{ fontWeight: 600, fontSize: '1.1rem' }}>No photos uploaded yet.</p>
+                  <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>Photographers assigned to this event can upload from their dashboard.</p>
+                </div>
+              ) : (
+                <div style={{ columns: '3 280px', columnGap: '1.2rem' }}>
+                  {galleryData.photos.map(photo => {
+                    const imgSrc = photo.media_file_url || photo.thumbnail_url || photo.media_file;
+                    const aiColor = { PENDING: '#f59e0b', FACES_DETECTED: '#3b82f6', MAPPED_TO_USERS: '#22c55e', FAILED: '#ef4444' }[photo.ai_status] || '#94a3b8';
+                    return (
+                      <div key={photo.id} style={{ marginBottom: '1.2rem', breakInside: 'avoid', borderRadius: '16px', overflow: 'hidden', position: 'relative', cursor: 'pointer', border: '1px solid var(--glass-border)' }} onClick={() => setLightboxPhoto(photo)}>
+                        {imgSrc ? (<img src={imgSrc} alt={photo.caption || 'Event photo'} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />) : (<div style={{ height: '200px', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Camera size={32} style={{ opacity: 0.3 }} /></div>)}
+                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0.8rem 1rem', background: 'linear-gradient(transparent, rgba(8,12,20,0.92))', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
+                            <div style={{ fontWeight: 700 }}>{photo.uploader_full_name}</div>
+                            <div style={{ opacity: 0.7 }}>{new Date(photo.created_at).toLocaleDateString()}</div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <span style={{ background: aiColor + '22', color: aiColor, padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, border: `1px solid ${aiColor}44` }}>{photo.ai_status?.replace(/_/g, ' ')}</span>
+                            <a href={imgSrc} download onClick={e => e.stopPropagation()} style={{ background: 'rgba(255,177,115,0.15)', color: 'var(--primary)', padding: '0.4rem', borderRadius: '8px', border: '1px solid var(--primary)', display: 'flex', alignItems: 'center' }} title="Download"><Download size={14} /></a>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'vendors' && (
             <div className="glass" style={{ padding: '3rem', borderRadius: '32px' }}>
               <h2 style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.5px', marginBottom: '2rem' }}>Assigned Vendors</h2>
@@ -973,6 +1061,20 @@ const OrganizerEventDetails = () => {
       </div>
 
 
+
+      {/* Photo Lightbox */}
+      {lightboxPhoto && (
+        <div onClick={() => setLightboxPhoto(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '2rem' }}>
+          <div onClick={e => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '90vh', position: 'relative' }}>
+            {(lightboxPhoto.media_file_url || lightboxPhoto.media_file) && (<img src={lightboxPhoto.media_file_url || lightboxPhoto.media_file} alt="" style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: '16px', display: 'block' }} />)}
+            <div style={{ position: 'absolute', bottom: '-3rem', left: 0, right: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#CBD5E1' }}>
+              <div><span style={{ fontWeight: 700 }}>{lightboxPhoto.uploader_full_name}</span><span style={{ opacity: 0.6, marginLeft: '0.8rem', fontSize: '0.85rem' }}>{new Date(lightboxPhoto.created_at).toLocaleDateString()}</span></div>
+              <a href={lightboxPhoto.media_file_url || lightboxPhoto.media_file} download onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}><Download size={16} /> Download</a>
+            </div>
+            <button onClick={() => setLightboxPhoto(null)} style={{ position: 'absolute', top: '-2.5rem', right: 0, background: 'none', border: 'none', color: '#CBD5E1', cursor: 'pointer', fontSize: '1.5rem', fontWeight: 800 }}>✕</button>
+          </div>
+        </div>
+      )}
 
       {/* Check-in History Modal */}
       {selectedHistoryUser && (
