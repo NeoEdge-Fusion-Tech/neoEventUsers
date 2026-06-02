@@ -116,19 +116,25 @@ const Signup = () => {
           )}
 
           {type === 'owner' && (
-            <div style={styles.inputRow}>
-              <div style={styles.field}>
-                <label style={styles.label}>Country</label>
-                <select name="country" onChange={handleChange} required style={styles.input} value={formData.country}>
-                  <option value="" disabled>Select a country</option>
-                  {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+            <>
+              <div style={styles.inputRow}>
+                <div style={styles.field}>
+                  <label style={styles.label}>Country</label>
+                  <select name="country" onChange={handleChange} required style={styles.input} value={formData.country}>
+                    <option value="" disabled>Select a country</option>
+                    {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div style={styles.field}>
+                  <label style={styles.label}>State/County</label>
+                  <input name="state_or_county" onChange={handleChange} required style={styles.input} />
+                </div>
               </div>
               <div style={styles.field}>
-                <label style={styles.label}>State/County</label>
-                <input name="state_or_county" onChange={handleChange} required style={styles.input} />
+                <label style={styles.label}>Phone Number</label>
+                <input name="phone_number" placeholder="+234..." onChange={handleChange} required style={styles.input} />
               </div>
-            </div>
+            </>
           )}
 
           {type === 'vendor' && (

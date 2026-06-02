@@ -1,7 +1,8 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { User, Mail, Camera, Save, Loader2, ShieldCheck, Fingerprint, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, Mail, Camera, Save, Loader2, ShieldCheck, Fingerprint, Lock, CheckCircle2, AlertCircle, Building2, Globe, FileText, Briefcase, MapPin, DollarSign, Clock as ClockIcon, Phone } from 'lucide-react';
 import api from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
+import './ProfileSettings.css';
 
 const ProfileSettings = () => {
   const { user: authUser, setUser: setAuthUser } = useContext(AuthContext);
@@ -21,16 +22,36 @@ const ProfileSettings = () => {
   };
 
   const [formData, setFormData] = useState({
-    username: getFullName(authUser),
-    email: authUser?.email || '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone_number: '',
+    organisation_name: '',
+    organisation_website: '',
+    business_registration_number: '',
+    bio: '',
+    service_title: '',
+    service_areas: '',
+    base_rate: '',
+    years_of_experience: ''
   });
 
   useEffect(() => {
     if (authUser) {
       setUser(authUser);
       setFormData({
-        username: getFullName(authUser),
+        first_name: authUser.first_name || '',
+        last_name: authUser.last_name || '',
         email: authUser.email || '',
+        phone_number: authUser.phone_number || '',
+        organisation_name: authUser.owner_profile?.organisation_name || '',
+        organisation_website: authUser.owner_profile?.organisation_website || '',
+        business_registration_number: authUser.owner_profile?.business_registration_number || '',
+        bio: authUser.vendor_profile?.bio || '',
+        service_title: authUser.vendor_profile?.service_title || '',
+        service_areas: authUser.vendor_profile?.service_areas || '',
+        base_rate: authUser.vendor_profile?.base_rate || '',
+        years_of_experience: authUser.vendor_profile?.years_of_experience || ''
       });
     }
   }, [authUser]);
@@ -45,8 +66,27 @@ const ProfileSettings = () => {
     setIsError(false);
     
     const data = new FormData();
-    data.append('username', formData.username);
-    if (profileImage) data.append('profile_image', profileImage);
+    data.append('first_name', formData.first_name);
+    data.append('last_name', formData.last_name);
+    data.append('phone_number', formData.phone_number);
+
+    // Append role-specific fields
+    if (user?.role === 'OWNER') {
+      if (formData.organisation_name) data.append('organisation_name', formData.organisation_name);
+      if (formData.organisation_website) data.append('organisation_website', formData.organisation_website);
+      if (formData.business_registration_number) data.append('business_registration_number', formData.business_registration_number);
+      if (profileImage) data.append('organisation_logo', profileImage);
+    } else if (user?.role === 'VENDOR') {
+      if (formData.bio) data.append('bio', formData.bio);
+      if (formData.service_title) data.append('service_title', formData.service_title);
+      if (formData.service_areas) data.append('service_areas', formData.service_areas);
+      if (formData.base_rate) data.append('base_rate', formData.base_rate);
+      if (formData.years_of_experience) data.append('years_of_experience', formData.years_of_experience);
+      if (profileImage) data.append('profile_image', profileImage);
+    } else {
+      if (profileImage) data.append('profile_image', profileImage);
+    }
+
     if (referenceImage) data.append('reference_image', referenceImage);
 
     let endpoint = 'profile/';
@@ -58,21 +98,23 @@ const ProfileSettings = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      // Merge the updated profile data into the current user state
       const updatedProfile = response.data;
       let updatedUser = { ...user };
       
       if (user?.role === 'VENDOR') {
         updatedUser.vendor_profile = { ...updatedUser.vendor_profile, ...updatedProfile };
-        if (updatedProfile.username) updatedUser.username = updatedProfile.username;
+        if (updatedProfile.first_name) updatedUser.first_name = updatedProfile.first_name;
+        if (updatedProfile.last_name) updatedUser.last_name = updatedProfile.last_name;
+        if (updatedProfile.phone_number !== undefined) updatedUser.phone_number = updatedProfile.phone_number;
       } else if (user?.role === 'OWNER') {
         updatedUser.owner_profile = { ...updatedUser.owner_profile, ...updatedProfile };
-        if (updatedProfile.username) updatedUser.username = updatedProfile.username;
+        if (updatedProfile.first_name) updatedUser.first_name = updatedProfile.first_name;
+        if (updatedProfile.last_name) updatedUser.last_name = updatedProfile.last_name;
+        if (updatedProfile.phone_number !== undefined) updatedUser.phone_number = updatedProfile.phone_number;
       } else {
         updatedUser = { ...updatedUser, ...updatedProfile };
       }
       
-      // Update local storage and state
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setUser(updatedUser);
       setAuthUser(updatedUser);
@@ -82,24 +124,24 @@ const ProfileSettings = () => {
     } catch (err) {
       console.error('Update failed', err);
       setIsError(true);
-      setMessage('Synchronization Failed. Please verify credentials.');
+      setMessage(err.response?.data?.detail || 'Synchronization Failed. Please verify data.');
     } finally {
       setUpdating(false);
     }
   };
 
   return (
-    <div className="settings-container" style={{ padding: '4rem', maxWidth: '1400px', margin: '0 auto' }}>
-      <header style={{ marginBottom: '5rem' }}>
+    <div className="settings-wrapper">
+      <header className="settings-header">
         <span style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '4px' }}>System Configuration</span>
-        <h1 style={{ fontSize: '4.5rem', fontWeight: 900, letterSpacing: '-2px', marginTop: '0.5rem' }}>Account <span style={{ color: 'var(--primary)' }}>Identity</span></h1>
-        <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.2rem', fontWeight: 500, marginTop: '0.5rem' }}>Manage your global credentials and biometric signatures.</p>
+        <h1 className="settings-header-title">Account <span style={{ color: 'var(--primary)' }}>Identity</span></h1>
+        <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.2rem', fontWeight: 500, marginTop: '0.5rem' }}>Manage your global credentials and system signature.</p>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 450px', gap: '5rem' }}>
+      <div className="settings-grid">
         <section>
-            <div className="glass" style={{ padding: '4rem', borderRadius: '40px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '4rem' }}>
+            <div className="glass" style={{ padding: '3rem', borderRadius: '40px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '3rem' }}>
                  <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--accent-glow)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--primary)', border: '1px solid var(--glass-border)' }}>
                     <User size={28} strokeWidth={2.5} />
                  </div>
@@ -107,19 +149,38 @@ const ProfileSettings = () => {
               </div>
 
               <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '2rem' }}>
+                <div className="settings-form-grid">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Full Name</label>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                      First Name
+                    </label>
                     <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
                       <User size={20} color="var(--primary)" />
                       <input 
                         type="text" 
-                        value={formData.username}
-                        onChange={(e) => setFormData({...formData, username: e.target.value})}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none' }}
+                        value={formData.first_name}
+                        onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }}
                       />
                     </div>
                   </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                      Last Name
+                    </label>
+                    <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
+                      <User size={20} color="var(--primary)" />
+                      <input 
+                        type="text" 
+                        value={formData.last_name}
+                        onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="settings-form-grid">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                     <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Email Address</label>
                     <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px', opacity: 0.6 }}>
@@ -128,20 +189,152 @@ const ProfileSettings = () => {
                         type="email" 
                         value={formData.email}
                         disabled
-                        style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', cursor: 'not-allowed' }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', cursor: 'not-allowed', width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Phone Number</label>
+                    <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
+                      <Phone size={20} color="var(--primary)" />
+                      <input 
+                        type="text" 
+                        value={formData.phone_number}
+                        onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
+                        placeholder="+1..."
+                        style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }}
                       />
                     </div>
                   </div>
                 </div>
 
+                {user?.role === 'OWNER' && (
+                  <>
+                    <div className="settings-form-grid">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Organization Name</label>
+                        <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
+                          <Building2 size={20} color="var(--primary)" />
+                          <input 
+                            type="text" 
+                            value={formData.organisation_name}
+                            onChange={(e) => setFormData({...formData, organisation_name: e.target.value})}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }}
+                          />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Organization Website</label>
+                        <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
+                          <Globe size={20} color="var(--primary)" />
+                          <input 
+                            type="url" 
+                            value={formData.organisation_website}
+                            onChange={(e) => setFormData({...formData, organisation_website: e.target.value})}
+                            placeholder="https://"
+                            style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                      <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Business Registration Number</label>
+                      <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
+                        <FileText size={20} color="var(--primary)" />
+                        <input 
+                          type="text" 
+                          value={formData.business_registration_number}
+                          onChange={(e) => setFormData({...formData, business_registration_number: e.target.value})}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {user?.role === 'VENDOR' && (
+                  <>
+                    <div className="settings-form-grid">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Service Title</label>
+                        <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
+                          <Briefcase size={20} color="var(--primary)" />
+                          <input 
+                            type="text" 
+                            value={formData.service_title}
+                            onChange={(e) => setFormData({...formData, service_title: e.target.value})}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }}
+                          />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Service Areas</label>
+                        <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
+                          <MapPin size={20} color="var(--primary)" />
+                          <input 
+                            type="text" 
+                            value={formData.service_areas}
+                            onChange={(e) => setFormData({...formData, service_areas: e.target.value})}
+                            placeholder="e.g. Lagos, Abuja"
+                            style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="settings-form-grid">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Base Rate (₦)</label>
+                        <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
+                          <DollarSign size={20} color="var(--primary)" />
+                          <input 
+                            type="number" 
+                            value={formData.base_rate}
+                            onChange={(e) => setFormData({...formData, base_rate: e.target.value})}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }}
+                          />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Years of Experience</label>
+                        <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
+                          <ClockIcon size={20} color="var(--primary)" />
+                          <input 
+                            type="number" 
+                            value={formData.years_of_experience}
+                            onChange={(e) => setFormData({...formData, years_of_experience: e.target.value})}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                      <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Bio</label>
+                      <div className="glass" style={{ display: 'flex', alignItems: 'flex-start', padding: '1.5rem', borderRadius: '16px' }}>
+                        <input 
+                          type="text" 
+                          value={formData.bio}
+                          onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                          placeholder="Tell us about your services..."
+                          style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Profile Image</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                    <div style={{ width: '130px', height: '130px', borderRadius: '32px', background: 'var(--surface-highest)', overflow: 'hidden', border: '2px solid var(--primary)', position: 'relative' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    {user?.role === 'OWNER' ? 'Organization Logo' : 'Profile Image'}
+                  </label>
+                  <div className="profile-img-container">
+                    <div className="profile-img-box">
                       {getProfileImage(user) ? <img src={getProfileImage(user)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><User size={48} color="var(--primary)" /></div>}
                     </div>
                     <label className="btn-primary" style={{ padding: '1.2rem 2.5rem', borderRadius: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', fontWeight: 900, fontSize: '0.95rem' }}>
-                      <Camera size={22} /> {profileImage ? 'IMAGE STAGED' : 'CHANGE AVATAR'}
+                      <Camera size={22} /> {profileImage ? 'IMAGE STAGED' : (user?.role === 'OWNER' ? 'UPLOAD LOGO' : 'CHANGE AVATAR')}
                       <input type="file" hidden onChange={(e) => setProfileImage(e.target.files[0])} />
                     </label>
                   </div>
@@ -161,7 +354,7 @@ const ProfileSettings = () => {
               </form>
             </div>
 
-            <div className="glass" style={{ padding: '4rem', borderRadius: '40px', marginTop: '3rem' }}>
+            <div className="glass" style={{ padding: '3rem', borderRadius: '40px', marginTop: '3rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '3rem' }}>
                  <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--accent-glow)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--primary)', border: '1px solid var(--glass-border)' }}>
                     <Lock size={28} strokeWidth={2.5} />
@@ -203,7 +396,7 @@ const ProfileSettings = () => {
                   <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Current Password</label>
                   <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
                     <Lock size={20} color="var(--on-surface-variant)" />
-                    <input name="old_password" type="password" required style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none' }} />
+                    <input name="old_password" type="password" required style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }} />
                   </div>
                 </div>
 
@@ -211,7 +404,7 @@ const ProfileSettings = () => {
                   <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>New Password</label>
                   <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
                     <Lock size={20} color="var(--primary)" />
-                    <input name="new_password" type="password" required style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none' }} />
+                    <input name="new_password" type="password" required style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }} />
                   </div>
                 </div>
                 
@@ -219,7 +412,7 @@ const ProfileSettings = () => {
                   <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>Confirm New Password</label>
                   <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.5rem', borderRadius: '16px' }}>
                     <Lock size={20} color="var(--primary)" />
-                    <input name="new_password_confirm" type="password" required style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none' }} />
+                    <input name="new_password_confirm" type="password" required style={{ background: 'transparent', border: 'none', color: 'var(--on-surface)', padding: '1.2rem', flex: 1, fontSize: '1.1rem', fontWeight: 600, outline: 'none', width: '100%' }} />
                   </div>
                 </div>
 
@@ -273,8 +466,6 @@ const ProfileSettings = () => {
                       </div>
                     </label>
                  </div>
-
-
               </div>
             </div>
           </aside>

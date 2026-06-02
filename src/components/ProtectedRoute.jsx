@@ -12,6 +12,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // 2. Check if user's email is verified
+  if (user.is_email_verified === false) {
+    return <Navigate to={`/verify-email?email=${encodeURIComponent(user.email)}`} replace />;
+  }
+
   // 2. Check if user has the required role (if roles are specified)
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     // Redirect to a "Unauthorized" page or their specific dashboard

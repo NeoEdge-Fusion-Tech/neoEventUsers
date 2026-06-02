@@ -142,7 +142,7 @@ const Home = () => {
                             <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Starting At</span>
                             <span style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--on-surface)' }}>{event.is_paid ? `$${event.price}` : 'VIP'}</span>
                           </div>
-                          <button className="btn-primary" style={{ padding: '1.2rem 2.5rem', borderRadius: '18px', fontWeight: 800, fontSize: '0.95rem', opacity: isClickable ? 1 : 0.5 }}>{isClickable ? 'OBTAIN ACCESS' : 'UNAVAILABLE'}</button>
+                          <button className="btn-primary" style={{ padding: '1.2rem 2.5rem', borderRadius: '18px', fontWeight: 800, fontSize: '0.95rem', opacity: isClickable ? 1 : 0.5 }}>{isClickable ? 'OBTAIN ACCESS' : regStatus.toUpperCase()}</button>
                         </div>
                       </div>
                     </>

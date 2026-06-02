@@ -9,6 +9,7 @@ const VerifyEmail = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [resending, setResending] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -84,77 +85,192 @@ const VerifyEmail = () => {
     }
   };
 
+  const handleResend = async () => {
+    if (!email) {
+      setError("Email address missing. Please request a new verification link.");
+      return;
+    }
+    
+    setResending(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const { data } = await API.post('auth/resend-otp/', { email });
+      setSuccess(data.detail || "Verification code resent successfully. Please check your inbox.");
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to resend code. Please try again.");
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-slate-800 rounded-xl shadow-xl overflow-hidden border border-slate-700">
-        <div className="p-8">
-          <div className="text-center mb-8">
-            <div className="mx-auto h-12 w-12 bg-orange-500/10 rounded-xl flex items-center justify-center mb-4 border border-orange-500/20">
-              <Mail className="h-6 w-6 text-orange-500" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Check your email</h2>
-            <p className="text-slate-400">
-              We've sent a 6-digit verification code to <br/>
-              <span className="font-semibold text-white">{email || 'your email address'}</span>
-            </p>
+    <div style={styles.container}>
+      <div className="glass" style={styles.card}>
+        <div style={styles.header}>
+          <div style={styles.iconWrapper}>
+            <Mail size={32} color="var(--primary)" />
+          </div>
+          <h2 style={styles.title}>Check your email</h2>
+          <p style={styles.subtitle}>
+            We've sent a 6-digit verification code to <br/>
+            <strong style={{ color: 'var(--on-surface)' }}>{email || 'your email address'}</strong>
+          </p>
+        </div>
+
+        {error && (
+          <div style={styles.errorAlert}>
+            <AlertCircle size={18} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {success && (
+          <div style={styles.successAlert}>
+            <CheckCircle2 size={18} />
+            <span>{success}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleVerify} style={styles.form}>
+          <div style={styles.otpContainer}>
+            {otp.map((data, index) => (
+              <input
+                key={index}
+                type="text"
+                maxLength="1"
+                value={data}
+                onChange={e => handleChange(e.target, index)}
+                onKeyDown={e => handleKeyDown(e, index)}
+                onFocus={e => e.target.select()}
+                style={styles.otpInput}
+              />
+            ))}
           </div>
 
-          {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-400">{error}</p>
-            </div>
-          )}
+          <button
+            type="submit"
+            disabled={loading || !email}
+            className="btn-primary"
+            style={styles.submitBtn}
+          >
+            {loading ? (
+              <Loader2 className="spinner" size={20} />
+            ) : (
+              <>
+                Verify Email
+                <ArrowRight size={18} />
+              </>
+            )}
+          </button>
+        </form>
 
-          {success && (
-            <div className="mb-6 p-4 bg-green-500/10 border border-green-500/50 rounded-lg flex items-start space-x-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-green-400">{success}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleVerify}>
-            <div className="flex justify-between mb-8 space-x-2">
-              {otp.map((data, index) => (
-                <input
-                  key={index}
-                  type="text"
-                  maxLength="1"
-                  value={data}
-                  onChange={e => handleChange(e.target, index)}
-                  onKeyDown={e => handleKeyDown(e, index)}
-                  onFocus={e => e.target.select()}
-                  className="w-12 h-14 text-center text-2xl font-bold text-white bg-slate-900 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                />
-              ))}
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || !email}
-              className="w-full py-3 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
-            >
-              {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  Verify Email
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="mt-8 text-center text-sm text-slate-400">
-            Didn't receive the email?{" "}
-            <button className="text-orange-500 hover:text-orange-400 font-medium ml-1">
-              Click to resend
-            </button>
-          </div>
+        <div style={styles.footer}>
+          Didn't receive the email?{" "}
+          <button 
+            type="button"
+            onClick={handleResend}
+            disabled={resending || !email}
+            style={{...styles.resendBtn, opacity: (resending || !email) ? 0.5 : 1}}
+          >
+            {resending ? "Sending..." : "Click to resend"}
+          </button>
         </div>
       </div>
     </div>
   );
+};
+
+const styles = {
+  container: {
+    height: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'var(--bg-color)',
+    color: 'var(--on-surface)',
+    padding: '20px'
+  },
+  card: {
+    width: '100%',
+    maxWidth: '450px',
+    padding: '40px',
+    borderRadius: '24px',
+  },
+  header: { textAlign: 'center', marginBottom: '30px' },
+  iconWrapper: {
+    width: '64px',
+    height: '64px',
+    borderRadius: '16px',
+    background: 'rgba(255, 177, 115, 0.1)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 15px',
+    border: '1px solid rgba(255, 177, 115, 0.2)'
+  },
+  title: { fontSize: '1.8rem', fontWeight: 800, margin: '10px 0 5px', color: 'var(--on-surface)' },
+  subtitle: { color: 'var(--on-surface-variant)', fontSize: '0.95rem' },
+  form: { display: 'flex', flexDirection: 'column', gap: '25px' },
+  otpContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '8px'
+  },
+  otpInput: {
+    width: '50px',
+    height: '60px',
+    textAlign: 'center',
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    color: 'var(--on-surface)',
+    backgroundColor: 'var(--surface)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: '12px',
+    outline: 'none',
+    transition: 'all 0.3s'
+  },
+  submitBtn: {
+    padding: '14px',
+    borderRadius: '12px',
+    border: 'none',
+    background: 'var(--primary)',
+    color: 'var(--on-primary)',
+    fontWeight: 700,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+    opacity: 1
+  },
+  errorAlert: {
+    background: 'rgba(239, 68, 68, 0.1)',
+    color: '#ef4444',
+    border: '1px solid rgba(239, 68, 68, 0.2)',
+    padding: '12px',
+    borderRadius: '10px',
+    marginBottom: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    fontSize: '0.85rem'
+  },
+  successAlert: {
+    background: 'rgba(34, 197, 94, 0.1)',
+    color: '#22c55e',
+    border: '1px solid rgba(34, 197, 94, 0.2)',
+    padding: '12px',
+    borderRadius: '10px',
+    marginBottom: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    fontSize: '0.85rem'
+  },
+  footer: { marginTop: '25px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--on-surface-variant)' },
+  resendBtn: { background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }
 };
 
 export default VerifyEmail;

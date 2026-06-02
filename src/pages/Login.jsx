@@ -27,7 +27,9 @@ const LoginPage = () => {
       const data = await login(formData);
       
       let redirectPath = from;
-      if (from === "/") {
+      if (data?.user && !data.user.is_email_verified) {
+        redirectPath = `/verify-email?email=${encodeURIComponent(formData.username)}`;
+      } else if (from === "/") {
          if (data?.user?.role === 'ATTENDEE') redirectPath = '/tickets';
          else if (data?.user?.role === 'OWNER') redirectPath = '/owner/dashboard';
          else if (data?.user?.role === 'VENDOR') redirectPath = '/vendor/dashboard';
