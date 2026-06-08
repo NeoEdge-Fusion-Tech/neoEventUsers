@@ -14,7 +14,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import LoginPage from './pages/Login';
 import RegisterType from './pages/RegisterType';
-import Signup from './pages/Signup';
+import Signup from './pages/SignUp';
 
 import VendorDashboard from './pages/VendorDashboard';
 import OwnerDashboard from './pages/OwnerDashboard';
