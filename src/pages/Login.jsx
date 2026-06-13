@@ -33,6 +33,7 @@ const LoginPage = () => {
          if (data?.user?.role === 'ATTENDEE') redirectPath = '/tickets';
          else if (data?.user?.role === 'OWNER') redirectPath = '/owner/dashboard';
          else if (data?.user?.role === 'VENDOR') redirectPath = '/vendor/dashboard';
+         else if (data?.user?.role === 'ADMIN') redirectPath = '/neo-admin';
       }
       
       navigate(redirectPath, { replace: true });

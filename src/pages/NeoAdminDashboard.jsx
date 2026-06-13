@@ -2,9 +2,9 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   BarChart3, Users, Calendar, Camera, Cpu, ArrowLeft, Search,
-  ChevronRight, Loader2, Download, Image, CheckCircle, Clock,
-  AlertTriangle, X, Play, RefreshCw, Filter, Mail, Phone,
-  Shield, Activity, TrendingUp, Database
+  ChevronRight, AlertTriangle, X, Play, RefreshCw, Filter, Mail, Phone,
+  Shield, Activity, TrendingUp, Database, Edit, Save, List, Layers, Plus, DollarSign, Key,
+  Clock, CheckCircle, Loader2, Download, Image
 } from 'lucide-react';
 import api from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
@@ -55,6 +55,7 @@ const NeoAdminDashboard = () => {
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventSearch, setEventSearch] = useState('');
+  const [eventGroupByOwner, setEventGroupByOwner] = useState(false);
 
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [eventDetail, setEventDetail] = useState(null);
@@ -68,6 +69,15 @@ const NeoAdminDashboard = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('');
+  
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [editingUserData, setEditingUserData] = useState(null);
+  const [isSavingUser, setIsSavingUser] = useState(false);
+  
+  const [isInvitingUser, setIsInvitingUser] = useState(false);
+  const [inviteData, setInviteData] = useState({ email: '', first_name: '', last_name: '', role_type: 'OPERATOR' });
+  const [inviteResult, setInviteResult] = useState(null);
+  const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
 
   /* ── redirect non-admins ── */
   useEffect(() => {
@@ -90,10 +100,13 @@ const NeoAdminDashboard = () => {
   }, []);
 
   /* ── fetch events ── */
-  const fetchEvents = async (search = '') => {
+  const fetchEvents = async (search = '', groupBy = false) => {
     setEventsLoading(true);
     try {
-      const r = await api.get(`/neo-admin/events/${search ? `?search=${encodeURIComponent(search)}` : ''}`);
+      const qs = new URLSearchParams();
+      if (search) qs.set('search', search);
+      if (groupBy) qs.set('sort_by', 'owner');
+      const r = await api.get(`/neo-admin/events/?${qs.toString()}`);
       setEvents(r.data.results || []);
     } catch (e) {
       console.error(e);
@@ -103,8 +116,8 @@ const NeoAdminDashboard = () => {
   };
 
   useEffect(() => {
-    if (activeSection === 'events') fetchEvents(eventSearch);
-  }, [activeSection]);
+    if (activeSection === 'events') fetchEvents(eventSearch, eventGroupByOwner);
+  }, [activeSection, eventGroupByOwner]);
 
   /* ── fetch event detail ── */
   const openEventDetail = async (ev, photographerId = '') => {
@@ -157,6 +170,136 @@ const NeoAdminDashboard = () => {
   useEffect(() => {
     if (activeSection === 'users') fetchUsers(userSearch, userRoleFilter);
   }, [activeSection]);
+
+  /* ── edit user ── */
+  const openEditUser = async (userId) => {
+    setEditingUserId(userId);
+    try {
+      const r = await api.get(`/neo-admin/users/${userId}/`);
+      setEditingUserData(r.data);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to load user details');
+      setEditingUserId(null);
+    }
+  };
+
+  const saveUser = async () => {
+    if (!editingUserData) return;
+    setIsSavingUser(true);
+    try {
+      await api.put(`/neo-admin/users/${editingUserId}/`, editingUserData);
+      alert('User updated successfully');
+      setEditingUserId(null);
+      setEditingUserData(null);
+      fetchUsers(userSearch, userRoleFilter); // refresh
+    } catch (e) {
+      console.error(e);
+      alert('Failed to update user');
+    } finally {
+      setIsSavingUser(false);
+    }
+  };
+  
+  const handleUserChange = (field, value, section = null) => {
+    setEditingUserData(prev => {
+      const next = { ...prev };
+      if (section) {
+        if (!next[section]) next[section] = {};
+        next[section][field] = value;
+      } else {
+        next[field] = value;
+      }
+      return next;
+    });
+  };
+
+  const handleInviteUser = async () => {
+    if (!inviteData.email) return;
+    setIsSubmittingInvite(true);
+    setInviteResult(null);
+    try {
+      const r = await api.post('/neo-admin/users/invite/', inviteData);
+      setInviteResult(r.data);
+      fetchUsers(userSearch, userRoleFilter);
+    } catch (e) {
+      console.error(e);
+      alert(e.response?.data?.detail || 'Failed to invite user');
+    } finally {
+      setIsSubmittingInvite(false);
+    }
+  };
+
+  const renderGroupedEvents = () => {
+    if (!eventGroupByOwner) return null;
+    
+    const groups = {};
+    events.forEach(ev => {
+      const ownerKey = ev.owner.email;
+      if (!groups[ownerKey]) groups[ownerKey] = { owner: ev.owner, events: [] };
+      groups[ownerKey].events.push(ev);
+    });
+
+    return Object.values(groups).map(g => (
+      <div key={g.owner.email} style={{ marginBottom: '2rem' }}>
+        <div style={{ padding: '1rem', background: 'rgba(255,177,115,0.05)', borderRadius: '12px 12px 0 0', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid var(--glass-border)', borderBottom: 'none' }}>
+          <div style={{ width: '40px', height: '40px', background: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#080C14', fontWeight: 800 }}>
+            {g.owner.full_name.charAt(0)}
+          </div>
+          <div>
+            <div style={{ fontWeight: 900, fontSize: '1.1rem' }}>{g.owner.full_name}</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>{g.owner.email} · {g.events.length} Event(s)</div>
+          </div>
+        </div>
+        <div className="glass" style={{ borderRadius: '0 0 12px 12px', overflow: 'hidden' }}>
+          {renderEventTableRows(g.events)}
+        </div>
+      </div>
+    ));
+  };
+
+  const renderEventTableRows = (eventsList) => (
+    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <thead>
+        <tr style={{ background: 'rgba(0,0,0,0.2)' }}>
+          {['Event', 'Status', 'Photos', 'AI Progress', 'Date', ''].map(h => (
+            <th key={h} style={{ padding: '1rem 1.2rem', textAlign: 'left', fontSize: '0.7rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {eventsList.length === 0 ? (
+          <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--on-surface-variant)' }}>No events found.</td></tr>
+        ) : eventsList.map(ev => {
+          const total = ev.photos.total;
+          const done = ev.photos.mapped + ev.photos.faces_detected;
+          const pct = total ? Math.round((done / total) * 100) : 0;
+          return (
+            <tr key={ev.id} style={{ borderTop: '1px solid var(--glass-border)', cursor: 'pointer', transition: 'background 0.15s' }} onClick={() => openEventDetail(ev)}>
+              <td style={{ padding: '1rem 1.2rem' }}>
+                <div style={{ fontWeight: 800 }}>{ev.title}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>{ev.venue_name}</div>
+              </td>
+              <td style={{ padding: '1rem 1.2rem' }}>
+                <span style={{ background: ev.status === 'PUBLISHED' ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.05)', color: ev.status === 'PUBLISHED' ? '#22c55e' : 'var(--on-surface-variant)', padding: '0.3rem 0.7rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>{ev.status}</span>
+              </td>
+              <td style={{ padding: '1rem 1.2rem', fontWeight: 800 }}>{total}</td>
+              <td style={{ padding: '1rem 1.2rem', minWidth: '120px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                  <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, var(--primary), #22c55e)', borderRadius: '4px' }} />
+                  </div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', minWidth: '32px' }}>{pct}%</span>
+                </div>
+              </td>
+              <td style={{ padding: '1rem 1.2rem', fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>{ev.start_date ? new Date(ev.start_date).toLocaleDateString() : '—'}</td>
+              <td style={{ padding: '1rem 1.2rem' }}><ChevronRight size={18} color="var(--primary)" /></td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
 
   /* ─────────────────────────────────────────────────────
      RENDER
@@ -229,7 +372,7 @@ const NeoAdminDashboard = () => {
                       <StatCard icon={Users} label="Total Users" value={stats.users.total} color="#fff" />
                       <StatCard icon={Shield} label="Admins" value={stats.users.admins} color="#a855f7" />
                       <StatCard icon={Calendar} label="Event Owners" value={stats.users.owners} color="var(--primary)" />
-                      <StatCard icon={Camera} label="Vendors" value={stats.users.vendors} color="#3b82f6" />
+                      <StatCard icon={Camera} label="Vendors" value={stats.users.vendors?.total ?? stats.users.vendors} color="#3b82f6" />
                       <StatCard icon={Users} label="Attendees" value={stats.users.attendees} color="#22c55e" />
                     </div>
                   </div>
@@ -240,8 +383,46 @@ const NeoAdminDashboard = () => {
                       <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.5rem' }}>Events</h3>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                         <StatCard icon={Database} label="Total Events" value={stats.events.total} />
-                        <StatCard icon={Activity} label="Published" value={stats.events.active} color="#22c55e" />
+                        <StatCard icon={Activity} label="Published" value={stats.events.published ?? stats.events.active} color="#22c55e" />
+                        {stats.events.active !== undefined && (
+                          <StatCard icon={Play} label="Active" value={stats.events.active} color="#3b82f6" />
+                        )}
+                        {stats.events.past !== undefined && (
+                          <StatCard icon={Clock} label="Past" value={stats.events.past} color="#f59e0b" />
+                        )}
                       </div>
+
+                      {stats.users.vendors?.by_type && Object.keys(stats.users.vendors.by_type).length > 0 && (
+                        <div style={{ marginTop: '2.5rem' }}>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.5rem' }}>Vendor Breakdown</h3>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
+                            {Object.entries(stats.users.vendors.by_type).map(([vType, count]) => (
+                               <div key={vType} className="glass" style={{ padding: '1rem', borderRadius: '12px', borderLeft: '4px solid #3b82f6' }}>
+                                 <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#3b82f6', textTransform: 'uppercase' }}>{vType}</div>
+                                 <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{count}</div>
+                               </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {stats.system_activity && (
+                        <div style={{ marginTop: '2.5rem' }}>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.5rem' }}>System Activity</h3>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                             <StatCard icon={Mail} label="Gallery Mails Sent" value={stats.system_activity.gallery_mails_sent} color="#a855f7" />
+                          </div>
+                        </div>
+                      )}
+
+                      {stats.revenue && (
+                        <div style={{ marginTop: '2.5rem' }}>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.5rem' }}>Platform Revenue</h3>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+                            <StatCard icon={DollarSign} label="Total Revenue" value={`${stats.revenue.currency} ${stats.revenue.total.toLocaleString()}`} color="#f59e0b" />
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.5rem' }}>AI Processing</h3>
@@ -287,23 +468,30 @@ const NeoAdminDashboard = () => {
                 <h1 style={{ fontSize: '2.8rem', fontWeight: 950, letterSpacing: '-1px' }}>All Events</h1>
               </div>
 
-              {/* Search */}
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', alignItems: 'center' }}>
                 <div className="glass" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0 1.2rem', borderRadius: '12px', border: '1px solid var(--glass-border)', flex: 1 }}>
                   <Search size={18} color="var(--primary)" />
                   <input
                     placeholder="Search by event title or owner email…"
                     value={eventSearch}
                     onChange={e => setEventSearch(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && fetchEvents(eventSearch)}
+                    onKeyDown={e => e.key === 'Enter' && fetchEvents(eventSearch, eventGroupByOwner)}
                     style={{ border: 'none', background: 'transparent', padding: '12px 0', fontSize: '0.9rem', color: 'var(--on-surface)', outline: 'none', fontWeight: 600, width: '100%' }}
                   />
                 </div>
-                <button onClick={() => fetchEvents(eventSearch)} className="btn-primary" style={{ padding: '0 2rem', borderRadius: '12px', fontWeight: 800 }}>Search</button>
+                
+                <button onClick={() => setEventGroupByOwner(!eventGroupByOwner)} className="glass" style={{ padding: '0 1.5rem', borderRadius: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem', height: '44px', background: eventGroupByOwner ? 'rgba(255,177,115,0.1)' : '', color: eventGroupByOwner ? 'var(--primary)' : 'var(--on-surface)', border: eventGroupByOwner ? '1px solid var(--primary)' : '1px solid var(--glass-border)', cursor: 'pointer' }}>
+                  {eventGroupByOwner ? <Layers size={18} /> : <List size={18} />}
+                  {eventGroupByOwner ? 'Grouped by Owner' : 'Flat List'}
+                </button>
+
+                <button onClick={() => fetchEvents(eventSearch, eventGroupByOwner)} className="btn-primary" style={{ padding: '0 2rem', borderRadius: '12px', fontWeight: 800, height: '44px' }}>Search</button>
               </div>
 
               {eventsLoading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '6rem' }}><Loader2 className="animate-spin" size={36} color="var(--primary)" /></div>
+              ) : eventGroupByOwner ? (
+                renderGroupedEvents()
               ) : (
                 <div className="glass" style={{ borderRadius: '24px', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -395,7 +583,7 @@ const NeoAdminDashboard = () => {
               ) : eventDetail ? (
                 <>
                   {/* AI Stats */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
                     {Object.entries(eventDetail.ai_stats).map(([status, count]) => {
                       const c = aiColors[status] || { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' };
                       return (
@@ -406,6 +594,68 @@ const NeoAdminDashboard = () => {
                       );
                     })}
                   </div>
+                  
+                  {/* AI Analytics Detail */}
+                  {eventDetail.ai_analytics && (
+                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px', marginBottom: '3rem' }}>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Cpu size={18} color="var(--primary)" /> Deep AI Analytics
+                      </h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', fontWeight: 700, marginBottom: '0.3rem' }}>Total Faces Detected</div>
+                          <div style={{ fontSize: '1.8rem', fontWeight: 900 }}>{eventDetail.ai_analytics.total_faces_detected}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', fontWeight: 700, marginBottom: '0.3rem' }}>Avg. Face Confidence</div>
+                          <div style={{ fontSize: '1.8rem', fontWeight: 900, color: eventDetail.ai_analytics.avg_face_confidence > 0.8 ? '#22c55e' : '#f59e0b' }}>{(eventDetail.ai_analytics.avg_face_confidence * 100).toFixed(1)}%</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginTop: '0.3rem' }}>Min: {(eventDetail.ai_analytics.min_face_confidence * 100).toFixed(1)}% · Max: {(eventDetail.ai_analytics.max_face_confidence * 100).toFixed(1)}%</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', fontWeight: 700, marginBottom: '0.3rem' }}>Avg. Match Confidence</div>
+                          <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--primary)' }}>{(eventDetail.ai_analytics.avg_match_confidence * 100).toFixed(1)}%</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginTop: '0.3rem' }}>Total users matched: {eventDetail.ai_analytics.total_users_matched}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', fontWeight: 700, marginBottom: '0.3rem' }}>Processed Target Users</div>
+                          <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#a855f7' }}>{eventDetail.ai_analytics.users_processed_count}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', fontWeight: 700, marginBottom: '0.3rem' }}>Total Processed Images</div>
+                          <div style={{ fontSize: '1.8rem', fontWeight: 900 }}>{eventDetail.ai_analytics.total_processed_images}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Event Statistics */}
+                  {eventDetail.event_stats && (
+                    <div style={{ marginBottom: '3rem' }}>
+                       <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <Calendar size={18} color="var(--primary)" /> Event Statistics
+                        </h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                          <StatCard icon={Users} label="Registered" value={eventDetail.event_stats.registered_attendees || 0} />
+                          <StatCard icon={CheckCircle} label="Attended" value={eventDetail.event_stats.attended_attendees || 0} color="#22c55e" />
+                          <StatCard icon={Camera} label="Vendors" value={eventDetail.event_stats.vendors || 0} color="#f59e0b" />
+                          <StatCard icon={Mail} label="Mails Sent" value={eventDetail.event_stats.gallery_mails_sent || 0} color="#a855f7" />
+                        </div>
+                        
+                        {eventDetail.event_stats.users_validated_per_day && Object.keys(eventDetail.event_stats.users_validated_per_day).length > 0 && (
+                          <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px' }}>
+                            <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', marginBottom: '1rem' }}>Validations Per Day</h4>
+                            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                               {Object.entries(eventDetail.event_stats.users_validated_per_day).map(([date, count]) => (
+                                 <div key={date} style={{ background: 'rgba(255,255,255,0.05)', padding: '0.8rem 1.2rem', borderRadius: '8px' }}>
+                                   <div style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>{date}</div>
+                                   <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>{count} <span style={{fontSize: '0.8rem', fontWeight: 600}}>users</span></div>
+                                 </div>
+                               ))}
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                  )}
 
                   {/* Photographer filter */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -472,9 +722,16 @@ const NeoAdminDashboard = () => {
           {/* ── USERS ── */}
           {activeSection === 'users' && (
             <div>
-              <div style={{ marginBottom: '3rem' }}>
-                <div style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '0.5rem' }}>Management</div>
-                <h1 style={{ fontSize: '2.8rem', fontWeight: 950, letterSpacing: '-1px' }}>All Users</h1>
+              <div style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div>
+                  <div style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '0.5rem' }}>Management</div>
+                  <h1 style={{ fontSize: '2.8rem', fontWeight: 950, letterSpacing: '-1px' }}>All Users</h1>
+                </div>
+                {user?.admin_subtype !== 'OPS' && (
+                  <button onClick={() => { setIsInvitingUser(true); setInviteResult(null); setInviteData({ email: '', first_name: '', last_name: '', role_type: 'OPERATOR' }); }} className="btn-primary" style={{ padding: '0.8rem 1.5rem', borderRadius: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Plus size={18} /> Invite Admin / Operator
+                  </button>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
@@ -510,9 +767,9 @@ const NeoAdminDashboard = () => {
                     </thead>
                     <tbody>
                       {users.length === 0 ? (
-                        <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--on-surface-variant)' }}>No users found.</td></tr>
+                        <tr><td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: 'var(--on-surface-variant)' }}>No users found.</td></tr>
                       ) : users.map(u => (
-                        <tr key={u.id} style={{ borderTop: '1px solid var(--glass-border)' }}>
+                        <tr key={u.id} style={{ borderTop: '1px solid var(--glass-border)', cursor: 'pointer', transition: 'background 0.15s' }} onClick={() => openEditUser(u.id)}>
                           <td style={{ padding: '1rem 1.2rem' }}>
                             <div style={{ fontWeight: 800 }}>{u.full_name}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>@{u.username}</div>
@@ -528,6 +785,9 @@ const NeoAdminDashboard = () => {
                           </td>
                           <td style={{ padding: '1rem 1.2rem', fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>{u.phone || '—'}</td>
                           <td style={{ padding: '1rem 1.2rem', fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>{new Date(u.date_joined).toLocaleDateString()}</td>
+                          <td style={{ padding: '1rem 1.2rem', textAlign: 'right' }}>
+                            <Edit size={16} color="var(--on-surface-variant)" />
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -539,6 +799,143 @@ const NeoAdminDashboard = () => {
 
         </main>
       </div>
+
+      {/* ── Edit User Modal ── */}
+      {editingUserId && editingUserData && (
+        <div onClick={() => setEditingUserId(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4000, padding: '2rem' }}>
+          <div className="glass" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto', borderRadius: '24px', padding: '2.5rem', position: 'relative' }}>
+            <button onClick={() => setEditingUserId(null)} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer' }}><X size={24} /></button>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '2rem' }}>Edit User</h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>First Name</label>
+                <input value={editingUserData.first_name || ''} onChange={e => handleUserChange('first_name', e.target.value)} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Last Name</label>
+                <input value={editingUserData.last_name || ''} onChange={e => handleUserChange('last_name', e.target.value)} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Email</label>
+                <input value={editingUserData.email || ''} onChange={e => handleUserChange('email', e.target.value)} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Role</label>
+                <select value={editingUserData.role || ''} onChange={e => handleUserChange('role', e.target.value)} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }}>
+                  {['ADMIN', 'OWNER', 'VENDOR', 'ATTENDEE', 'VALIDATOR'].map(r => (<option key={r} value={r}>{r}</option>))}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Status</label>
+                <select value={editingUserData.onboarding_status || ''} onChange={e => handleUserChange('onboarding_status', e.target.value)} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }}>
+                  {['PENDING_EMAIL', 'PROFILE_INCOMPLETE', 'PENDING_APPROVAL', 'ACTIVE', 'SUSPENDED'].map(r => (<option key={r} value={r}>{r}</option>))}
+                </select>
+              </div>
+            </div>
+
+            {editingUserData.role === 'VENDOR' && (
+              <>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--glass-border)' }}>Vendor Profile</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Subtype</label>
+                    <input value={editingUserData.vendor_profile?.subtype || ''} onChange={e => handleUserChange('subtype', e.target.value, 'vendor_profile')} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Service Title</label>
+                    <input value={editingUserData.vendor_profile?.service_title || ''} onChange={e => handleUserChange('service_title', e.target.value, 'vendor_profile')} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>CAC Number</label>
+                    <input value={editingUserData.vendor_profile?.cac_number || ''} onChange={e => handleUserChange('cac_number', e.target.value, 'vendor_profile')} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>CAC Verified?</label>
+                    <input type="checkbox" checked={editingUserData.vendor_profile?.is_cac_verified || false} onChange={e => handleUserChange('is_cac_verified', e.target.checked, 'vendor_profile')} style={{ transform: 'scale(1.2)' }} />
+                  </div>
+                </div>
+
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--glass-border)' }}>Business Details</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Business Name</label>
+                    <input value={editingUserData.vendor_business?.business_name || ''} onChange={e => handleUserChange('business_name', e.target.value, 'vendor_business')} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Reg Number</label>
+                    <input value={editingUserData.vendor_business?.registration_number || ''} onChange={e => handleUserChange('registration_number', e.target.value, 'vendor_business')} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Address</label>
+                    <input value={editingUserData.vendor_business?.address || ''} onChange={e => handleUserChange('address', e.target.value, 'vendor_business')} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <button onClick={saveUser} disabled={isSavingUser} className="btn-primary" style={{ width: '100%', padding: '1rem', borderRadius: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              {isSavingUser ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+              {isSavingUser ? 'Saving...' : 'Save User Settings'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Invite User Modal ── */}
+      {isInvitingUser && (
+        <div onClick={() => !inviteResult && setIsInvitingUser(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4000, padding: '2rem' }}>
+          <div className="glass" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2.5rem', position: 'relative' }}>
+            <button onClick={() => setIsInvitingUser(false)} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer' }}><X size={24} /></button>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '2rem' }}>Invite Internal User</h2>
+            
+            {inviteResult ? (
+              <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid #22c55e', padding: '1.5rem', borderRadius: '16px', color: '#22c55e' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle size={20} /> {inviteResult.message}</h3>
+                <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>User account created for <strong>{inviteResult.email}</strong>. Please securely share the temporary password with them.</p>
+                
+                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '1.2rem', fontWeight: 800, color: 'var(--on-surface)' }}>{inviteResult.temporary_password}</span>
+                  <button onClick={() => navigator.clipboard.writeText(inviteResult.temporary_password)} style={{ background: 'var(--primary)', border: 'none', color: '#080C14', padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Key size={14} /> Copy
+                  </button>
+                </div>
+                
+                <button onClick={() => setIsInvitingUser(false)} className="btn-primary" style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', fontWeight: 800, marginTop: '2rem' }}>Done</button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Email Address *</label>
+                  <input type="email" value={inviteData.email} onChange={e => setInviteData({...inviteData, email: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} placeholder="user@neoedge.com" />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>First Name</label>
+                    <input value={inviteData.first_name} onChange={e => setInviteData({...inviteData, first_name: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Last Name</label>
+                    <input value={inviteData.last_name} onChange={e => setInviteData({...inviteData, last_name: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Access Role</label>
+                  <select value={inviteData.role_type} onChange={e => setInviteData({...inviteData, role_type: e.target.value})} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }}>
+                    <option value="OPERATOR">Internal Operator (Cannot view revenue)</option>
+                    <option value="ADMIN">Super Admin (Full Access)</option>
+                  </select>
+                </div>
+
+                <button onClick={handleInviteUser} disabled={isSubmittingInvite || !inviteData.email} className="btn-primary" style={{ width: '100%', padding: '1rem', borderRadius: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '0.5rem', opacity: (!inviteData.email || isSubmittingInvite) ? 0.5 : 1 }}>
+                  {isSubmittingInvite ? <Loader2 className="animate-spin" size={20} /> : <Mail size={20} />}
+                  {isSubmittingInvite ? 'Inviting...' : 'Send Invitation'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Lightbox ── */}
       {lightboxPhoto && (

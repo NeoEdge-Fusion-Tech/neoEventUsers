@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Search, Calendar, Ticket, User, LogOut,
   Disc, Sun, Moon, Camera, Image as ImageIcon,
-  Briefcase // Added for generic Vendor icon
+  Briefcase, Shield // Added for generic Vendor icon and Admin icon
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from "../hooks/useAuth"; // Point to the hook file
@@ -72,6 +72,13 @@ const Navbar = () => {
         {user && user.role === 'OWNER' && (
           <>
             <NavItem to="/owner/dashboard" label="Events" icon={Calendar} />
+          </>
+        )}
+
+        {/* Admin Links */}
+        {user && user.role === 'ADMIN' && (
+          <>
+            <NavItem to="/neo-admin" label="Dashboard" icon={Shield} />
           </>
         )}
 
