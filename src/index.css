@@ -147,6 +147,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   }
 }
 
-.animate-spin {
+.animate-spin, .spinner {
   animation: spin 1s linear infinite;
 }
