@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_NEO_URL,   // Should be: http://localhost:8000/api/
+  baseURL: import.meta.env.VITE_API_URL,   // Should be: http://localhost:8000/api/
   withCredentials: true,                   // CRITICAL for cookies (refresh token)
   timeout: 15000,
 });
