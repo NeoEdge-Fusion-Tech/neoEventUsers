@@ -6,3 +6,5 @@ dist/
 .vscode/
 .idea/
 *.log
+
+test-acct.txt
