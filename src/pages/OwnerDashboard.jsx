@@ -135,38 +135,78 @@ const OwnerDashboard = () => {
       return v;
     });
 
-    const formData = new FormData();
-    formData.append('title', newEvent.title);
-    formData.append('description', newEvent.description);
-    formData.append('venue_name', newEvent.venue_name);
-    formData.append('venue_address', newEvent.venue_address);
-    formData.append('country', newEvent.country);
-    formData.append('state_or_county', newEvent.state_or_county);
-    formData.append('start_date', newEvent.start_date);
-    formData.append('end_date', newEvent.end_date);
-    formData.append('number_of_days', newEvent.number_of_days);
-    formData.append('registration_start', newEvent.registration_start);
-    formData.append('registration_deadline', newEvent.registration_deadline);
-    formData.append('max_participants', newEvent.max_participants);
-    formData.append('is_public', newEvent.is_public);
-    formData.append('currency', newEvent.currency);
-    formData.append('status', 'PUBLISHED'); // Automatically publish on creation
-
-    if (bannerImage) formData.append('banner_image', bannerImage);
-    if (bannerPortrait) formData.append('banner_portrait', bannerPortrait);
-    if (bannerVideo) formData.append('banner_video', bannerVideo);
-
-    // Append nested ticket categories as stringified JSON
-    formData.append('ticket_types', JSON.stringify(ticketTypes));
-    
-    // Append nested event vendors as stringified JSON
-    if (finalVendors.length > 0) {
-      formData.append('vendors', JSON.stringify(finalVendors));
-    }
-
     try {
-      await eventService.createEvent(formData);
+      // Prepare list of files to upload
+      const filesToUpload = [];
+      if (bannerImage) {
+        filesToUpload.push({ file_name: bannerImage.name, file_type: bannerImage.type, fileObj: bannerImage, key: 'banner_image' });
+      }
+      if (bannerPortrait) {
+        filesToUpload.push({ file_name: bannerPortrait.name, file_type: bannerPortrait.type, fileObj: bannerPortrait, key: 'banner_portrait' });
+      }
+      if (bannerVideo) {
+        filesToUpload.push({ file_name: bannerVideo.name, file_type: bannerVideo.type, fileObj: bannerVideo, key: 'banner_video' });
+      }
+
+      const uploadedUrls = {};
+
+      if (filesToUpload.length > 0) {
+        // Step 1: Request presigned URLs from backend
+        const presignedRes = await eventService.generatePresignedUrl({
+          files: filesToUpload.map(f => ({ file_name: f.file_name, file_type: f.file_type }))
+        });
+
+        const presignedUrls = presignedRes.data.urls;
+
+        // Step 2: Upload each file directly via PUT request
+        for (const fileItem of filesToUpload) {
+          const presignedInfo = presignedUrls.find(p => p.original_name === fileItem.file_name);
+          if (!presignedInfo) {
+            throw new Error(`Failed to get upload signature for ${fileItem.file_name}`);
+          }
+
+          await fetch(presignedInfo.presigned_url, {
+            method: 'PUT',
+            body: fileItem.fileObj,
+            headers: {
+              'Content-Type': fileItem.file_type
+            }
+          });
+
+          uploadedUrls[fileItem.key] = presignedInfo.full_url;
+        }
+      }
+
+      // Step 3: Create event with JSON payload
+      const eventPayload = {
+        title: newEvent.title,
+        description: newEvent.description,
+        venue_name: newEvent.venue_name,
+        venue_address: newEvent.venue_address,
+        country: newEvent.country,
+        state_or_county: newEvent.state_or_county,
+        start_date: newEvent.start_date,
+        end_date: newEvent.end_date,
+        number_of_days: newEvent.number_of_days,
+        registration_start: newEvent.registration_start,
+        registration_deadline: newEvent.registration_deadline,
+        max_participants: newEvent.max_participants,
+        is_public: newEvent.is_public,
+        currency: newEvent.currency,
+        status: 'PUBLISHED',
+        ticket_types: ticketTypes,
+        banner_image: uploadedUrls.banner_image || null,
+        banner_portrait: uploadedUrls.banner_portrait || null,
+        banner_video: uploadedUrls.banner_video || null,
+      };
+
+      if (finalVendors.length > 0) {
+        eventPayload.vendors = finalVendors;
+      }
+
+      await eventService.createEvent(eventPayload);
       setShowCreate(false);
+      
       // Reset State
       setNewEvent({
         title: '',

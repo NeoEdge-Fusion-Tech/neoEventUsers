@@ -4,6 +4,7 @@ export const eventService = {
   // Organizer endpoints
   getAllEvents: () => API.get('events/all/'),
   createEvent: (data) => API.post('events/create/', data),
+  generatePresignedUrl: (data) => API.post('events/generate-presigned-url/', data),
   getEventDetail: (slug) => API.get(`events/${slug}/`),
   updateEvent: (id, data) => API.put(`events/${id}/update/`, data),
 
