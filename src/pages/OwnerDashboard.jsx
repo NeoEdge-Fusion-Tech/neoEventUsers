@@ -46,6 +46,10 @@ const OwnerDashboard = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [creating, setCreating] = useState(false);
 
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState(null); // { id, title }
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     fetchEvents();
     fetchVendorTypes();
@@ -80,6 +84,20 @@ const OwnerDashboard = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await eventService.deleteEvent(deleteTarget.id);
+      setDeleteTarget(null);
+      fetchEvents();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -573,9 +591,26 @@ const OwnerDashboard = () => {
               </div>
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto' }}>
-                <Link to={`/organizer/event/${ev.id}`} className="btn-primary" style={{ ...styles.actionBtn, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                <Link to={`/organizer/event/${ev.id}`} className="btn-primary" style={{ ...styles.actionBtn, flex: 1, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                   <Eye size={18} /> Manage Event
                 </Link>
+                <button
+                  onClick={() => setDeleteTarget({ id: ev.id, title: ev.title })}
+                  style={{
+                    ...styles.actionBtn,
+                    flex: 'none',
+                    padding: '12px 16px',
+                    background: 'rgba(239,68,68,0.08)',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    color: '#ef4444',
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    borderRadius: '12px', cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  title="Delete event"
+                >
+                  <Trash2 size={18} />
+                </button>
               </div>
             </div>
           </div>
@@ -587,6 +622,66 @@ const OwnerDashboard = () => {
         )}
       </div>
     </div>
+
+      {/* ── Delete Confirmation Modal ─────────────────── */}
+      {deleteTarget && (
+        <div style={styles.modalOverlay}>
+          <div className="glass" style={{
+            width: '100%', maxWidth: '480px', borderRadius: '28px',
+            padding: '3rem', display: 'flex', flexDirection: 'column', gap: '1.5rem',
+            border: '1px solid rgba(239,68,68,0.25)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{
+                width: '48px', height: '48px', borderRadius: '14px', flexShrink: 0,
+                background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Trash2 size={22} color="#ef4444" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: 900, marginBottom: '0.2rem' }}>Delete Event</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', fontWeight: 500 }}>This action cannot be undone</p>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.95rem', color: 'var(--on-surface-variant)', lineHeight: 1.6 }}>
+              Are you sure you want to permanently delete{' '}
+              <span style={{ color: 'var(--on-surface)', fontWeight: 800 }}>"{deleteTarget.title}"</span>?
+              All associated tickets, registrations, and vendor assignments will also be removed.
+            </p>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                style={{
+                  padding: '12px 24px', borderRadius: '12px', fontWeight: 800,
+                  fontSize: '0.9rem', cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid var(--glass-border)',
+                  color: 'var(--on-surface)',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteEvent}
+                disabled={deleting}
+                style={{
+                  padding: '12px 28px', borderRadius: '12px', fontWeight: 900,
+                  fontSize: '0.9rem', cursor: deleting ? 'not-allowed' : 'pointer',
+                  background: '#ef4444', border: 'none', color: '#fff',
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  opacity: deleting ? 0.7 : 1, transition: 'all 0.2s ease',
+                }}
+              >
+                {deleting ? <Loader2 className="animate-spin" size={18} /> : <Trash2 size={18} />}
+                {deleting ? 'Deleting…' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
   );
 };
 

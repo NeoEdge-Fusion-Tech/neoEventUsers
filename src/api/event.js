@@ -7,6 +7,7 @@ export const eventService = {
   generatePresignedUrl: (data) => API.post('events/generate-presigned-url/', data),
   getEventDetail: (slug) => API.get(`events/${slug}/`),
   updateEvent: (id, data) => API.put(`events/${id}/update/`, data),
+  deleteEvent: (id) => API.delete(`events/${id}/delete/`),
 
   // Vendor Management on Event
   getEventVendors: (eventId) => API.get(`events/${eventId}/vendors/`),
