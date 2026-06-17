@@ -262,7 +262,7 @@ const OwnerDashboard = () => {
 
   if (loading) return <div style={styles.center}><Loader2 className="spinner" size={40} color="var(--primary)" /></div>;
 
-  return (
+  return ( <>
     <div style={styles.container}>
       <header style={styles.header}>
         <div>
@@ -682,7 +682,7 @@ const OwnerDashboard = () => {
           </div>
         </div>
       )}
-  );
+  </> );
 };
 
 const styles = {
