@@ -7,6 +7,7 @@ import {
   Image, Download, Filter
 } from 'lucide-react';
 import api from '../api/axios';
+import { eventService } from '../api/event';
 import { vendorService } from '../api/vendor';
 
 const getCurrencySymbol = (code) => {
@@ -199,8 +200,46 @@ const OrganizerEventDetails = () => {
     e.preventDefault();
     setSaving(true); setSaveMsg(''); setSaveError('');
     try {
+      // Upload new graphics via presigned URLs if provided
+      const filesToUpload = [];
+      if (editForm.banner_image_file) {
+        filesToUpload.push({ file_name: editForm.banner_image_file.name, file_type: editForm.banner_image_file.type, fileObj: editForm.banner_image_file, key: 'banner_image' });
+      }
+      if (editForm.banner_portrait_file) {
+        filesToUpload.push({ file_name: editForm.banner_portrait_file.name, file_type: editForm.banner_portrait_file.type, fileObj: editForm.banner_portrait_file, key: 'banner_portrait' });
+      }
+      if (editForm.banner_video_file) {
+        filesToUpload.push({ file_name: editForm.banner_video_file.name, file_type: editForm.banner_video_file.type, fileObj: editForm.banner_video_file, key: 'banner_video' });
+      }
+
+      const uploadedUrls = {};
+      if (filesToUpload.length > 0) {
+        const presignedRes = await eventService.generatePresignedUrl({
+          files: filesToUpload.map(f => ({ file_name: f.file_name, file_type: f.file_type }))
+        });
+        const presignedUrls = presignedRes.data.urls;
+        for (const fileItem of filesToUpload) {
+          const presignedInfo = presignedUrls.find(p => p.original_name === fileItem.file_name);
+          if (!presignedInfo) throw new Error(`Failed to get upload signature for ${fileItem.file_name}`);
+          await fetch(presignedInfo.presigned_url, {
+            method: 'PUT',
+            body: fileItem.fileObj,
+            headers: { 'Content-Type': fileItem.file_type }
+          });
+          uploadedUrls[fileItem.key] = presignedInfo.full_url;
+        }
+      }
+
       const formData = new FormData();
-      Object.entries(editForm).forEach(([k, v]) => formData.append(k, v));
+      Object.entries(editForm).forEach(([k, v]) => {
+        if (!['banner_image_file', 'banner_portrait_file', 'banner_video_file'].includes(k)) {
+          formData.append(k, v);
+        }
+      });
+      if (uploadedUrls.banner_image) formData.append('banner_image', uploadedUrls.banner_image);
+      if (uploadedUrls.banner_portrait) formData.append('banner_portrait', uploadedUrls.banner_portrait);
+      if (uploadedUrls.banner_video) formData.append('banner_video', uploadedUrls.banner_video);
+
       formData.append('ticket_types', JSON.stringify(
         editTickets.map(({ _dirty, _new, ...t }) => t)
       ));
@@ -775,6 +814,25 @@ const OrganizerEventDetails = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={styles.editLabel}>Description</label>
                   <textarea rows={4} value={editForm.description || ''} onChange={e => setEditForm({ ...editForm, description: e.target.value })} style={{ ...styles.editInput, resize: 'vertical' }} />
+                </div>
+
+                {/* Event Graphics Update */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem' }}>
+                  <label style={{ ...styles.editLabel, fontSize: '1rem' }}>Event Graphics (Leave empty to keep existing)</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={styles.editLabel}>Landscape Banner (16:9)</label>
+                      <input type="file" accept="image/*" onChange={e => setEditForm({ ...editForm, banner_image_file: e.target.files[0] })} style={styles.editInput} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={styles.editLabel}>Portrait Flyer</label>
+                      <input type="file" accept="image/*" onChange={e => setEditForm({ ...editForm, banner_portrait_file: e.target.files[0] })} style={styles.editInput} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={styles.editLabel}>Promo Video</label>
+                      <input type="file" accept="video/*" onChange={e => setEditForm({ ...editForm, banner_video_file: e.target.files[0] })} style={styles.editInput} />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Ticket Categories */}
