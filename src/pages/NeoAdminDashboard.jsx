@@ -281,12 +281,12 @@ const NeoAdminDashboard = () => {
                 <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>{ev.venue_name}</div>
               </td>
               <td style={{ padding: '1rem 1.2rem' }}>
-                <span style={{ background: ev.status === 'PUBLISHED' ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.05)', color: ev.status === 'PUBLISHED' ? '#22c55e' : 'var(--on-surface-variant)', padding: '0.3rem 0.7rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>{ev.status}</span>
+                <span style={{ background: ev.status === 'PUBLISHED' ? 'rgba(34,197,94,0.1)' : 'var(--surface-tint)', color: ev.status === 'PUBLISHED' ? '#22c55e' : 'var(--on-surface-variant)', padding: '0.3rem 0.7rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>{ev.status}</span>
               </td>
               <td style={{ padding: '1rem 1.2rem', fontWeight: 800 }}>{total}</td>
               <td style={{ padding: '1rem 1.2rem', minWidth: '120px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                  <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ flex: 1, height: '6px', background: 'var(--surface-tint)', borderRadius: '4px', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, var(--primary), #22c55e)', borderRadius: '4px' }} />
                   </div>
                   <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', minWidth: '32px' }}>{pct}%</span>
@@ -437,14 +437,14 @@ const NeoAdminDashboard = () => {
                             <span style={{ color: 'var(--on-surface-variant)' }}>AI Processed</span>
                             <span style={{ color: 'var(--primary)' }}>{stats.photos.ai_processed_percent}%</span>
                           </div>
-                          <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
+                          <div style={{ height: '8px', background: 'var(--surface-tint)', borderRadius: '10px', overflow: 'hidden' }}>
                             <div style={{ height: '100%', width: `${stats.photos.ai_processed_percent}%`, background: 'linear-gradient(90deg, var(--primary), #22c55e)', borderRadius: '10px', transition: 'width 0.6s ease' }} />
                           </div>
                         </div>
                         {Object.entries(stats.photos.by_status).map(([status, count]) => {
                           const c = aiColors[status] || { color: '#94a3b8', bg: '' };
                           return (
-                            <div key={status} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <div key={status} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--glass-border)' }}>
                               <AiBadge status={status} />
                               <span style={{ fontWeight: 800, color: c.color }}>{count}</span>
                             </div>
@@ -520,12 +520,12 @@ const NeoAdminDashboard = () => {
                               <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>{ev.owner.email}</div>
                             </td>
                             <td style={{ padding: '1rem 1.2rem' }}>
-                              <span style={{ background: ev.status === 'PUBLISHED' ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.05)', color: ev.status === 'PUBLISHED' ? '#22c55e' : 'var(--on-surface-variant)', padding: '0.3rem 0.7rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>{ev.status}</span>
+                              <span style={{ background: ev.status === 'PUBLISHED' ? 'rgba(34,197,94,0.1)' : 'var(--surface-tint)', color: ev.status === 'PUBLISHED' ? '#22c55e' : 'var(--on-surface-variant)', padding: '0.3rem 0.7rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>{ev.status}</span>
                             </td>
                             <td style={{ padding: '1rem 1.2rem', fontWeight: 800 }}>{total}</td>
                             <td style={{ padding: '1rem 1.2rem', minWidth: '120px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                                <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ flex: 1, height: '6px', background: 'var(--surface-tint)', borderRadius: '4px', overflow: 'hidden' }}>
                                   <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, var(--primary), #22c55e)', borderRadius: '4px' }} />
                                 </div>
                                 <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', minWidth: '32px' }}>{pct}%</span>
@@ -646,7 +646,7 @@ const NeoAdminDashboard = () => {
                             <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', marginBottom: '1rem' }}>Validations Per Day</h4>
                             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                                {Object.entries(eventDetail.event_stats.users_validated_per_day).map(([date, count]) => (
-                                 <div key={date} style={{ background: 'rgba(255,255,255,0.05)', padding: '0.8rem 1.2rem', borderRadius: '8px' }}>
+                                 <div key={date} style={{ background: 'var(--surface-tint)', padding: '0.8rem 1.2rem', borderRadius: '8px' }}>
                                    <div style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>{date}</div>
                                    <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>{count} <span style={{fontSize: '0.8rem', fontWeight: 600}}>users</span></div>
                                  </div>
@@ -779,7 +779,7 @@ const NeoAdminDashboard = () => {
                             <span style={{ background: roleColor[u.role] + '22', color: roleColor[u.role] || 'var(--primary)', padding: '0.3rem 0.7rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, border: `1px solid ${roleColor[u.role]}44` }}>{u.role}</span>
                           </td>
                           <td style={{ padding: '1rem 1.2rem' }}>
-                            <span style={{ background: u.onboarding_status === 'ACTIVE' ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.05)', color: u.onboarding_status === 'ACTIVE' ? '#22c55e' : 'var(--on-surface-variant)', padding: '0.3rem 0.7rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>
+                            <span style={{ background: u.onboarding_status === 'ACTIVE' ? 'rgba(34,197,94,0.1)' : 'var(--surface-tint)', color: u.onboarding_status === 'ACTIVE' ? '#22c55e' : 'var(--on-surface-variant)', padding: '0.3rem 0.7rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>
                               {u.onboarding_status?.replace(/_/g, ' ')}
                             </span>
                           </td>

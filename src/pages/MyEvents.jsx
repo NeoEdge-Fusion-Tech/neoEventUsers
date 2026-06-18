@@ -45,11 +45,11 @@ const MyEvents = () => {
           <Icon size={24} strokeWidth={2.5} />
         </div>
         <h2 style={{ fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-1px' }}>{title}</h2>
-        <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)', marginLeft: '1rem' }}></div>
+        <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)', marginLeft: '1rem' }}></div>
       </div>
 
       {events.length === 0 ? (
-        <div className="glass" style={{ padding: '4rem', textAlign: 'center', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="glass" style={{ padding: '4rem', textAlign: 'center', borderRadius: '32px', border: '1px solid var(--glass-border)' }}>
           <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.1rem', fontWeight: 500 }}>{emptyMsg}</p>
         </div>
       ) : (
@@ -58,8 +58,8 @@ const MyEvents = () => {
             <div 
               key={reg.id} 
               onClick={() => navigate(`/event-console/${reg.id}`)}
-              className="glass hover-card" 
-              style={{ borderRadius: '28px', overflow: 'hidden', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.3s ease' }}
+              className="glass hover-card"
+              style={{ borderRadius: '28px', overflow: 'hidden', cursor: 'pointer', border: '1px solid var(--glass-border)', transition: 'all 0.3s ease' }}
             >
               <div style={{ height: '200px', position: 'relative' }}>
                 <img src={reg.event_banner || '/placeholder.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -70,7 +70,7 @@ const MyEvents = () => {
               </div>
               <div style={{ padding: '2rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                   <Play size={14} fill={reg.is_event_active ? 'var(--primary)' : 'rgba(255,255,255,0.3)'} color={reg.is_event_active ? 'var(--primary)' : 'rgba(255,255,255,0.3)'} />
+                   <Play size={14} fill={reg.is_event_active ? 'var(--primary)' : 'var(--on-surface-variant)'} color={reg.is_event_active ? 'var(--primary)' : 'var(--on-surface-variant)'} />
                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: reg.is_event_active ? 'var(--primary)' : 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
                      {reg.is_event_active ? 'Session Active' : (new Date(reg.event_start_date) > new Date() ? 'Upcoming' : 'Archived')}
                    </span>
@@ -81,7 +81,7 @@ const MyEvents = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><MapPin size={18} color="var(--primary)" /> {reg.event_location}</div>
                 </div>
                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-                   <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'all 0.3s ease' }}>
+                   <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--surface-tint)', display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'all 0.3s ease' }}>
                       <ChevronRight size={24} />
                    </div>
                 </div>

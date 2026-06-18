@@ -3,6 +3,7 @@ import API from './axios';
 export const eventService = {
   // Organizer endpoints
   getAllEvents: () => API.get('events/all/'),
+  getMyEvents: () => API.get('events/mine/'),
   createEvent: (data) => API.post('events/create/', data),
   generatePresignedUrl: (data) => API.post('events/generate-presigned-url/', data),
   getEventDetail: (slug) => API.get(`events/${slug}/`),

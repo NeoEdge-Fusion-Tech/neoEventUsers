@@ -200,57 +200,15 @@ const OrganizerEventDetails = () => {
     e.preventDefault();
     setSaving(true); setSaveMsg(''); setSaveError('');
     try {
-      // Upload new graphics via presigned URLs if provided
-      const filesToUpload = [];
-      if (editForm.banner_image_file) {
-        filesToUpload.push({ file_name: editForm.banner_image_file.name, file_type: editForm.banner_image_file.type, fileObj: editForm.banner_image_file, key: 'banner_image' });
-      }
-      if (editForm.banner_portrait_file) {
-        filesToUpload.push({ file_name: editForm.banner_portrait_file.name, file_type: editForm.banner_portrait_file.type, fileObj: editForm.banner_portrait_file, key: 'banner_portrait' });
-      }
-      if (editForm.banner_video_file) {
-        filesToUpload.push({ file_name: editForm.banner_video_file.name, file_type: editForm.banner_video_file.type, fileObj: editForm.banner_video_file, key: 'banner_video' });
-      }
-
-      const uploadedUrls = {};
-      if (filesToUpload.length > 0) {
-        const presignedRes = await eventService.generatePresignedUrl({
-          files: filesToUpload.map(f => ({ file_name: f.file_name, file_type: f.file_type }))
-        });
-        const presignedUrls = presignedRes.data.urls;
-        for (const fileItem of filesToUpload) {
-          const presignedInfo = presignedUrls.find(p => p.original_name === fileItem.file_name);
-          if (!presignedInfo) throw new Error(`Failed to get upload signature for ${fileItem.file_name}`);
-          const uploadRes = await fetch(presignedInfo.presigned_url, {
-            method: 'PUT',
-            body: fileItem.fileObj,
-            headers: { 'Content-Type': fileItem.file_type }
-          });
-          
-          let finalUrl = presignedInfo.full_url;
-          try {
-            if (uploadRes.headers.get('content-type')?.includes('application/json')) {
-              const data = await uploadRes.json();
-              if (data && data.url) {
-                finalUrl = data.url;
-              }
-            }
-          } catch (e) {
-            // Ignore parse errors, S3 might not return JSON
-          }
-          uploadedUrls[fileItem.key] = finalUrl;
-        }
-      }
-
       const formData = new FormData();
       Object.entries(editForm).forEach(([k, v]) => {
         if (!['banner_image_file', 'banner_portrait_file', 'banner_video_file'].includes(k)) {
           formData.append(k, v);
         }
       });
-      if (uploadedUrls.banner_image) formData.append('banner_image', uploadedUrls.banner_image);
-      if (uploadedUrls.banner_portrait) formData.append('banner_portrait', uploadedUrls.banner_portrait);
-      if (uploadedUrls.banner_video) formData.append('banner_video', uploadedUrls.banner_video);
+      if (editForm.banner_image_file) formData.append('banner_image', editForm.banner_image_file);
+      if (editForm.banner_portrait_file) formData.append('banner_portrait', editForm.banner_portrait_file);
+      if (editForm.banner_video_file) formData.append('banner_video', editForm.banner_video_file);
 
       formData.append('ticket_types', JSON.stringify(
         editTickets.map(({ _dirty, _new, ...t }) => t)
@@ -465,7 +423,7 @@ const OrganizerEventDetails = () => {
             className={activeTab === tab ? 'btn-primary' : 'glass'}
             style={{
               ...styles.tabBtn,
-              background: activeTab === tab ? 'linear-gradient(135deg,var(--primary),var(--primary-container))' : 'rgba(255,255,255,0.05)',
+              background: activeTab === tab ? 'linear-gradient(135deg,var(--primary),var(--primary-container))' : 'var(--surface-tint)',
               color: activeTab === tab ? '#080C14' : 'var(--on-surface-variant)',
               border: activeTab === tab ? '1px solid var(--primary)' : '1px solid var(--glass-border)',
               boxShadow: activeTab === tab ? '0 0 15px rgba(255,177,115,0.3)' : 'none',
@@ -638,7 +596,7 @@ const OrganizerEventDetails = () => {
                                         {r.checkin_history.map((ch, idx) => {
                                           const info = getEventDayInfo(ch.date);
                                           return (
-                                            <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <tr key={idx} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                                               <td style={{ padding: '0.6rem 1rem', fontWeight: 900, color: 'var(--primary)' }}>
                                                 {info ? `Day ${info.dayNum}` : ch.date}
                                               </td>
@@ -988,7 +946,7 @@ const OrganizerEventDetails = () => {
                             </div>
                           </div>
                           
-                          <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>Business Verification Status</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: p.vendor_is_verified ? '#22c55e' : '#ef4444', fontWeight: 900, fontSize: '0.85rem' }}>
                               {p.vendor_is_verified ? <><CheckCircle size={16} /> VERIFIED</> : <><X size={16} /> UNVERIFIED</>}
@@ -1163,7 +1121,7 @@ const OrganizerEventDetails = () => {
                 const dayMatch = eventDays.find(d => d.value === ch.date);
                 const dayLabel = dayMatch ? dayMatch.label : ch.date;
                 return (
-                  <div key={idx} style={{ padding: '1.2rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  <div key={idx} style={{ padding: '1.2rem', background: 'var(--surface-tint)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                     <div style={{ fontWeight: 800, color: 'var(--primary)' }}>{dayLabel}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                       <span style={{ color: 'var(--on-surface-variant)' }}>Time:</span>
@@ -1257,7 +1215,7 @@ const styles = {
   th: { padding: '0.8rem 0.5rem', borderBottom: '2px solid var(--glass-border)', fontSize: '0.7rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' },
   tr: { borderBottom: '1px solid var(--glass-border)' },
   td: { padding: '1rem 0.5rem', verticalAlign: 'middle', fontSize: '0.85rem' },
-  ticketBadge: { display: 'inline-block', background: 'rgba(255,255,255,0.05)', color: 'var(--primary)', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, whiteSpace: 'nowrap', border: '1px solid var(--glass-border)' },
+  ticketBadge: { display: 'inline-block', background: 'var(--surface-tint)', color: 'var(--primary)', padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, whiteSpace: 'nowrap', border: '1px solid var(--glass-border)' },
   groupBadge: { background: 'rgba(0,0,0,0.06)', color: 'var(--on-surface)', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' },
   statusBadge: { display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900, whiteSpace: 'nowrap' },
   vendorCard: { padding: '1.4rem', borderRadius: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 177, 115, 0.03)', border: '1px solid var(--glass-border)' },

@@ -265,7 +265,7 @@ const VendorDashboard = () => {
                 ...styles.tabBtn,
                 background: isActive 
                   ? 'linear-gradient(135deg, var(--primary), var(--primary-container))' 
-                  : 'rgba(255, 255, 255, 0.05)',
+                  : 'var(--surface-tint)',
                 color: isActive ? '#080C14' : 'var(--on-surface-variant)',
                 border: isActive ? '1px solid var(--primary)' : '1px solid var(--glass-border)',
                 boxShadow: isActive ? '0 0 15px rgba(255, 177, 115, 0.3)' : 'none',

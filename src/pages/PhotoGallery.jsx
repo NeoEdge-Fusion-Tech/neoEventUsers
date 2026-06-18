@@ -16,7 +16,7 @@ const PhotoGallery = () => {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="glass" style={{ padding: '0.8rem 1.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
+          <button className="glass" style={{ padding: '0.8rem 1.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--on-surface)' }}>
             <Download size={18} /> Download All
           </button>
           <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

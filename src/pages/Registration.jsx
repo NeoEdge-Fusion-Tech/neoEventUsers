@@ -245,7 +245,7 @@ const Registration = () => {
             <h3 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '2rem', letterSpacing: '-0.5px' }}>Event Vendors</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
               {event.vendors.map(v => (
-                <div key={v.id} className="glass" style={{ padding: '2rem', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid rgba(255,255,255,0.05)', background: 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)' }}>
+                <div key={v.id} className="glass" style={{ padding: '2rem', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid var(--glass-border)', background: 'linear-gradient(145deg, var(--surface-tint) 0%, transparent 100%)' }}>
                   <div>
                     <h4 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '0.2rem' }}>{v.vendor_name}</h4>
                     <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>{v.role}</span>
@@ -495,7 +495,7 @@ const Registration = () => {
                         {m.reference_image ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <CheckCircle size={20} color="#22c55e" />
-                            <span style={{ fontSize: '0.8rem', color: '#fff', fontWeight: 600 }}>{m.reference_image.name}</span>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--on-surface)', fontWeight: 600 }}>{m.reference_image.name}</span>
                           </div>
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -526,7 +526,7 @@ const Registration = () => {
                   {referenceImage ? (
                     <>
                       <CheckCircle size={28} color="#22c55e" />
-                      <span style={{ fontSize: '0.9rem', color: '#fff', fontWeight: 600 }}>{referenceImage.name}</span>
+                      <span style={{ fontSize: '0.9rem', color: 'var(--on-surface)', fontWeight: 600 }}>{referenceImage.name}</span>
                     </>
                   ) : (
                     <>

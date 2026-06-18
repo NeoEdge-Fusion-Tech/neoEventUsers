@@ -25,6 +25,8 @@
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
   --accent-glow: rgba(255, 177, 115, 0.12);
+  --surface-tint: rgba(255, 255, 255, 0.05);
+  --surface-tint-strong: rgba(255, 255, 255, 0.1);
 }
 
 /* Light Theme (Arctic Depth) */
@@ -40,6 +42,8 @@
   --glass-border: rgba(15, 23, 42, 0.06);
   --glass-shadow: 0 15px 45px rgba(15, 23, 42, 0.08);
   --accent-glow: rgba(255, 177, 115, 0.1);
+  --surface-tint: rgba(15, 23, 42, 0.04);
+  --surface-tint-strong: rgba(15, 23, 42, 0.08);
 }
 
 * {

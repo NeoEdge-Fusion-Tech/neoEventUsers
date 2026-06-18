@@ -94,7 +94,7 @@ const PublicVendorProfile = () => {
           const eventCount = category.events?.length || 0;
           return (
             <div key={category.id} className="glass hover-card" style={{...styles.card, padding: 0, overflow: 'hidden'}} onClick={() => goToCategory(category)}>
-              <div style={{ height: '160px', width: '100%', position: 'relative', background: category.cover_image ? 'transparent' : 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,177,115,0.1))' }}>
+              <div style={{ height: '160px', width: '100%', position: 'relative', background: category.cover_image ? 'transparent' : 'linear-gradient(135deg, var(--surface-tint), rgba(255,177,115,0.1))' }}>
                 {category.cover_image ? (
                   <img src={category.cover_image} alt={category.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (

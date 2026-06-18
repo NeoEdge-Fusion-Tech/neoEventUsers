@@ -78,7 +78,7 @@ const OwnerDashboard = () => {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const res = await eventService.getAllEvents();
+      const res = await eventService.getMyEvents();
       setEvents(res.data.results || res.data || []);
     } catch (err) {
       console.error(err);
@@ -154,86 +154,25 @@ const OwnerDashboard = () => {
     });
 
     try {
-      // Prepare list of files to upload
-      const filesToUpload = [];
-      if (bannerImage) {
-        filesToUpload.push({ file_name: bannerImage.name, file_type: bannerImage.type, fileObj: bannerImage, key: 'banner_image' });
-      }
-      if (bannerPortrait) {
-        filesToUpload.push({ file_name: bannerPortrait.name, file_type: bannerPortrait.type, fileObj: bannerPortrait, key: 'banner_portrait' });
-      }
-      if (bannerVideo) {
-        filesToUpload.push({ file_name: bannerVideo.name, file_type: bannerVideo.type, fileObj: bannerVideo, key: 'banner_video' });
-      }
-
-      const uploadedUrls = {};
-
-      if (filesToUpload.length > 0) {
-        // Step 1: Request presigned URLs from backend
-        const presignedRes = await eventService.generatePresignedUrl({
-          files: filesToUpload.map(f => ({ file_name: f.file_name, file_type: f.file_type }))
-        });
-
-        const presignedUrls = presignedRes.data.urls;
-
-        // Step 2: Upload each file directly via PUT request
-        for (const fileItem of filesToUpload) {
-          const presignedInfo = presignedUrls.find(p => p.original_name === fileItem.file_name);
-          if (!presignedInfo) {
-            throw new Error(`Failed to get upload signature for ${fileItem.file_name}`);
-          }
-
-          const uploadRes = await fetch(presignedInfo.presigned_url, {
-            method: 'PUT',
-            body: fileItem.fileObj,
-            headers: {
-              'Content-Type': fileItem.file_type
-            }
-          });
-
-          let finalUrl = presignedInfo.full_url;
-          try {
-            if (uploadRes.headers.get('content-type')?.includes('application/json')) {
-              const data = await uploadRes.json();
-              if (data && data.url) {
-                finalUrl = data.url;
-              }
-            }
-          } catch (e) {
-            // Ignore parse errors, S3 might not return JSON
-          }
-          uploadedUrls[fileItem.key] = finalUrl;
+      // Use FormData to allow backend to upload files directly
+      const formData = new FormData();
+      Object.entries(newEvent).forEach(([k, v]) => {
+        if (v !== null && v !== undefined && k !== 'ticket_types' && k !== 'vendors' && !k.endsWith('_file')) {
+          formData.append(k, v);
         }
-      }
+      });
+      formData.append('status', 'PUBLISHED');
 
-      // Step 3: Create event with JSON payload
-      const eventPayload = {
-        title: newEvent.title,
-        description: newEvent.description,
-        venue_name: newEvent.venue_name,
-        venue_address: newEvent.venue_address,
-        country: newEvent.country,
-        state_or_county: newEvent.state_or_county,
-        start_date: newEvent.start_date,
-        end_date: newEvent.end_date,
-        number_of_days: newEvent.number_of_days,
-        registration_start: newEvent.registration_start,
-        registration_deadline: newEvent.registration_deadline,
-        max_participants: newEvent.max_participants,
-        is_public: newEvent.is_public,
-        currency: newEvent.currency,
-        status: 'PUBLISHED',
-        ticket_types: ticketTypes,
-        banner_image: uploadedUrls.banner_image || null,
-        banner_portrait: uploadedUrls.banner_portrait || null,
-        banner_video: uploadedUrls.banner_video || null,
-      };
-
+      formData.append('ticket_types', JSON.stringify(ticketTypes));
       if (finalVendors.length > 0) {
-        eventPayload.vendors = finalVendors;
+        formData.append('vendors', JSON.stringify(finalVendors));
       }
 
-      await eventService.createEvent(eventPayload);
+      if (bannerImage) formData.append('banner_image', bannerImage);
+      if (bannerPortrait) formData.append('banner_portrait', bannerPortrait);
+      if (bannerVideo) formData.append('banner_video', bannerVideo);
+
+      await eventService.createEvent(formData);
       setShowCreate(false);
       
       // Reset State
@@ -446,7 +385,7 @@ const OwnerDashboard = () => {
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                   {/* Category Headers */}
-                  <div style={{ ...styles.ticketBuilderRow, backgroundColor: 'transparent', border: '1px solid transparent', paddingBottom: 0, paddingTop: 0, marginBottom: '-0.5rem', fontSize: '0.75rem', fontWeight: 900, color: 'rgba(255, 255, 255, 0.55)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                  <div style={{ ...styles.ticketBuilderRow, backgroundColor: 'transparent', border: '1px solid transparent', paddingBottom: 0, paddingTop: 0, marginBottom: '-0.5rem', fontSize: '0.75rem', fontWeight: 900, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
                     <div style={{ flex: 2, paddingLeft: '19px' }}>Category Name</div>
                     <div style={{ flex: 1, paddingLeft: '19px' }}>Price ({newEvent.currency === 'NGN' ? '₦' : newEvent.currency === 'EUR' ? '€' : newEvent.currency === 'GBP' ? '£' : newEvent.currency === 'CAD' ? 'CA$' : '$'})</div>
                     <div style={{ flex: 1, paddingLeft: '19px' }}>Capacity</div>
@@ -515,7 +454,7 @@ const OwnerDashboard = () => {
                 
                 {eventVendors.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-                    <div style={{ ...styles.ticketBuilderRow, backgroundColor: 'transparent', border: '1px solid transparent', paddingBottom: 0, paddingTop: 0, marginBottom: '-0.5rem', fontSize: '0.75rem', fontWeight: 900, color: 'rgba(255, 255, 255, 0.55)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                    <div style={{ ...styles.ticketBuilderRow, backgroundColor: 'transparent', border: '1px solid transparent', paddingBottom: 0, paddingTop: 0, marginBottom: '-0.5rem', fontSize: '0.75rem', fontWeight: 900, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
                       <div style={{ flex: 1.5, paddingLeft: '19px' }}>Service Type</div>
                       <div style={{ flex: 2, paddingLeft: '19px' }}>Vendor Name</div>
                       <div style={{ flex: 2, paddingLeft: '19px' }}>Vendor Email</div>
@@ -558,7 +497,7 @@ const OwnerDashboard = () => {
                   style={{ 
                     ...styles.addBtn, 
                     padding: '15px 30px', 
-                    background: 'rgba(255, 255, 255, 0.06)', 
+                    background: 'var(--surface-tint)', 
                     border: '1px solid var(--glass-border)', 
                     color: 'var(--on-surface)',
                     transition: 'all 0.2s ease'
@@ -669,7 +608,7 @@ const OwnerDashboard = () => {
                 style={{
                   padding: '12px 24px', borderRadius: '12px', fontWeight: 800,
                   fontSize: '0.9rem', cursor: 'pointer',
-                  background: 'rgba(255,255,255,0.06)', border: '1px solid var(--glass-border)',
+                  background: 'var(--surface-tint)', border: '1px solid var(--glass-border)',
                   color: 'var(--on-surface)',
                 }}
               >
@@ -718,8 +657,8 @@ const styles = {
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' },
   grid3: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem' },
   input: { padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--glass-border)', backgroundColor: 'var(--surface)', color: 'var(--on-surface)', fontSize: '1rem', outline: 'none', fontWeight: 600 },
-  label: { fontSize: '0.8rem', fontWeight: 800, color: 'rgba(255, 255, 255, 0.8)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '0.5rem', display: 'block' },
-  ticketBuilderRow: { padding: '1.2rem', borderRadius: '16px', display: 'flex', gap: '1rem', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--glass-border)' },
+  label: { fontSize: '0.8rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '0.5rem', display: 'block' },
+  ticketBuilderRow: { padding: '1.2rem', borderRadius: '16px', display: 'flex', gap: '1rem', alignItems: 'center', backgroundColor: 'var(--surface-tint)', border: '1px solid var(--glass-border)' },
   deleteTicketBtn: { background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '8px' },
   submitBtn: { borderRadius: '16px', fontSize: '1rem', fontWeight: 900, cursor: 'pointer' },
   sectionTitle: { display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '1.25rem', fontWeight: 900, color: 'var(--on-surface)', marginBottom: '0.5rem' },

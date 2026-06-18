@@ -74,7 +74,7 @@ const EventConsole = () => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', padding: '1rem', borderBottom: '1px solid var(--surface-highest)', gap: '1rem', background: 'rgba(255, 255, 255, 0.02)' }}>
+        <div style={{ display: 'flex', padding: '1rem', borderBottom: '1px solid var(--surface-highest)', gap: '1rem', background: 'var(--surface-tint)' }}>
           <TabButton id="overview" label="Overview" icon={Info} />
           <TabButton id="ticket" label="My Ticket" icon={Ticket} />
           <TabButton id="payment" label="Payment History" icon={CreditCard} />
@@ -158,7 +158,7 @@ const EventConsole = () => {
                 </h3>
                 
                 <div style={{ background: 'var(--surface-highest)', borderRadius: '16px', padding: '2rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.5rem' }}>
                     <div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.3rem' }}>Transaction ID</div>
                       <div style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--on-surface-variant)' }}>{registration.id.split('-').pop()}</div>
@@ -236,7 +236,7 @@ const EventConsole = () => {
               </div>
 
               {photos.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '5rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '24px' }}>
+                <div style={{ textAlign: 'center', padding: '5rem', background: 'var(--surface-tint)', borderRadius: '24px' }}>
                    <ImageIcon size={64} style={{ opacity: 0.1, marginBottom: '1.5rem' }} />
                    <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.1rem' }}>
                      No {galleryCategory} photos available for this event yet.
