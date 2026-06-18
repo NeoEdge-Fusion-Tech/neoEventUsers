@@ -47,14 +47,26 @@ const EventUpload = () => {
         
         if (presignedInfo) {
           // Direct PUT to S3
-          await fetch(presignedInfo.presigned_url, {
+          const uploadRes = await fetch(presignedInfo.presigned_url, {
             method: 'PUT',
             body: file,
             headers: {
               'Content-Type': file.type
             }
           });
-          successfulFullUrls.push(presignedInfo.full_url);
+          
+          let finalUrl = presignedInfo.full_url;
+          try {
+            if (uploadRes.headers.get('content-type')?.includes('application/json')) {
+              const data = await uploadRes.json();
+              if (data && data.url) {
+                finalUrl = data.url;
+              }
+            }
+          } catch (e) {
+            // Ignore parse errors, S3 might not return JSON
+          }
+          successfulFullUrls.push(finalUrl);
         }
         
         setProgress(Math.round(((i + 1) / files.length) * 100));

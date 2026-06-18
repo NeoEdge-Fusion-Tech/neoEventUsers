@@ -221,12 +221,24 @@ const OrganizerEventDetails = () => {
         for (const fileItem of filesToUpload) {
           const presignedInfo = presignedUrls.find(p => p.original_name === fileItem.file_name);
           if (!presignedInfo) throw new Error(`Failed to get upload signature for ${fileItem.file_name}`);
-          await fetch(presignedInfo.presigned_url, {
+          const uploadRes = await fetch(presignedInfo.presigned_url, {
             method: 'PUT',
             body: fileItem.fileObj,
             headers: { 'Content-Type': fileItem.file_type }
           });
-          uploadedUrls[fileItem.key] = presignedInfo.full_url;
+          
+          let finalUrl = presignedInfo.full_url;
+          try {
+            if (uploadRes.headers.get('content-type')?.includes('application/json')) {
+              const data = await uploadRes.json();
+              if (data && data.url) {
+                finalUrl = data.url;
+              }
+            }
+          } catch (e) {
+            // Ignore parse errors, S3 might not return JSON
+          }
+          uploadedUrls[fileItem.key] = finalUrl;
         }
       }
 
