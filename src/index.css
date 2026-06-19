@@ -176,12 +176,12 @@ img, video {
 /* Responsive event list grid */
 .responsive-event-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 2rem;
 }
 .responsive-event-grid > * {
   width: 100%;
-  max-width: 420px;
+  max-width: 340px;
   justify-self: center;
 }
 @media (max-width: 640px) {

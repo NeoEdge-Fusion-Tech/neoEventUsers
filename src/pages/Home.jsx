@@ -115,7 +115,7 @@ const Home = () => {
 
                   const cardContent = (
                     <>
-                      <div style={{ height: '200px', background: 'var(--surface-highest)', position: 'relative' }}>
+                      <div style={{ height: '170px', background: 'var(--surface-highest)', position: 'relative' }}>
                         <img src={event.banner_image || '/placeholder.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         <div style={{ position: 'absolute', top: '1rem', left: '1rem', display: 'flex', gap: '0.5rem' }}>
                           {event.is_currently_holding && (

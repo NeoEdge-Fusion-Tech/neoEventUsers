@@ -47,10 +47,10 @@ const OrganizerConsole = () => {
           <Link to="/events/create" className="btn-primary" style={{ padding: '1.2rem 3rem', borderRadius: '16px', textDecoration: 'none', fontWeight: 900 }}>LAUNCH FIRST EVENT</Link>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2rem', justifyItems: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem', justifyItems: 'center' }}>
           {events.map(event => (
-            <div key={event.id} className="glass card-hover" style={{ borderRadius: '24px', overflow: 'hidden', border: '1px solid var(--glass-border)', maxWidth: '420px', width: '100%', display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <div style={{ height: '200px', position: 'relative' }}>
+            <div key={event.id} className="glass card-hover" style={{ borderRadius: '24px', overflow: 'hidden', border: '1px solid var(--glass-border)', maxWidth: '340px', width: '100%', display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div style={{ height: '170px', position: 'relative' }}>
                 <img src={event.banner_image || '/placeholder.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(13, 20, 32, 0.9), transparent)' }}></div>
                 <div style={{ position: 'absolute', bottom: '1rem', left: '1.5rem' }}>
