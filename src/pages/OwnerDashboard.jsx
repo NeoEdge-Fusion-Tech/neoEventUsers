@@ -219,12 +219,12 @@ const OwnerDashboard = () => {
 
   return ( <>
     <div style={styles.container}>
-      <header style={styles.header}>
+      <header className="responsive-row" style={styles.header}>
         <div>
           <span style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '4px' }}>ORGANIZER PANEL</span>
-          <h1 style={{ fontSize: '3.5rem', fontWeight: 900, letterSpacing: '-1.5px', marginTop: '0.2rem' }}>Event <span style={{ color: 'var(--primary)' }}>Console</span></h1>
+          <h1 style={{ fontSize: 'clamp(2.2rem, 6vw, 3.5rem)', fontWeight: 900, letterSpacing: '-1.5px', marginTop: '0.2rem' }}>Event <span style={{ color: 'var(--primary)' }}>Console</span></h1>
         </div>
-        <button className="btn-primary" onClick={() => setShowCreate(true)} style={styles.addBtn}>
+        <button className="btn-primary" onClick={() => setShowCreate(true)} style={{ ...styles.addBtn, alignSelf: 'flex-start' }}>
           <Plus size={20} /> New Event
         </button>
       </header>
@@ -245,7 +245,7 @@ const OwnerDashboard = () => {
             )}
 
             <form onSubmit={handleCreateEvent} style={styles.form}>
-              <div style={styles.grid2}>
+              <div className="responsive-2col" style={styles.grid2}>
                 {/* Event Identity */}
                 <div style={styles.formSection}>
                   <h3 style={styles.sectionTitle}>
@@ -255,16 +255,16 @@ const OwnerDashboard = () => {
                   <textarea placeholder="Event Description" value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} required style={{...styles.input, minHeight: '80px'}} />
                   <input placeholder="Venue Name (e.g. Nexus Arena)" value={newEvent.venue_name} onChange={e => setNewEvent({...newEvent, venue_name: e.target.value})} required style={styles.input} />
                   <textarea placeholder="Venue Complete Address" value={newEvent.venue_address} onChange={e => setNewEvent({...newEvent, venue_address: e.target.value})} required style={{...styles.input, minHeight: '60px'}} />
-                  <div style={styles.grid2}>
+                  <div className="responsive-2col" style={styles.grid2}>
                     <select 
                       value={newEvent.country} 
                       onChange={e => setNewEvent({...newEvent, country: e.target.value})} 
                       required 
                       style={{ ...styles.input, width: '100%', cursor: 'pointer', backgroundColor: 'var(--surface)' }}
                     >
-                      <option value="" disabled style={{ background: '#1c1917' }}>Select Country</option>
+                      <option value="" disabled style={{ background: 'var(--surface)', color: 'var(--on-surface)' }}>Select Country</option>
                       {getNames().map(name => (
-                        <option key={name} value={name} style={{ background: '#1c1917' }}>{name}</option>
+                        <option key={name} value={name} style={{ background: 'var(--surface)', color: 'var(--on-surface)' }}>{name}</option>
                       ))}
                     </select>
                     <input placeholder="State / County" value={newEvent.state_or_county} onChange={e => setNewEvent({...newEvent, state_or_county: e.target.value})} required style={styles.input} />
@@ -276,7 +276,7 @@ const OwnerDashboard = () => {
                   <h3 style={styles.sectionTitle}>
                     <span style={styles.iconBadge}><Calendar size={18} /></span> Scheduling & Volume
                   </h3>
-                  <div style={styles.grid2}>
+                  <div className="responsive-2col" style={styles.grid2}>
                     <div>
                       <label style={styles.label}>Start Date & Time</label>
                       <input type="datetime-local" value={newEvent.start_date} onChange={e => setNewEvent({...newEvent, start_date: e.target.value})} required style={styles.input} />
@@ -287,7 +287,7 @@ const OwnerDashboard = () => {
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '1.5rem' }}>
+                  <div className="responsive-3col" style={{ gap: '1.5rem' }}>
                     <div>
                       <label style={styles.label}>Number of Days</label>
                       <input type="number" min="1" value={newEvent.number_of_days} onChange={e => setNewEvent({...newEvent, number_of_days: parseInt(e.target.value) || 1})} required style={styles.input} />
@@ -317,16 +317,16 @@ const OwnerDashboard = () => {
                         required 
                         style={{ ...styles.input, width: '100%', cursor: 'pointer', backgroundColor: 'var(--surface)' }}
                       >
-                        <option value="USD" style={{ background: '#1c1917' }}>USD ($)</option>
-                        <option value="NGN" style={{ background: '#1c1917' }}>NGN (₦)</option>
-                        <option value="EUR" style={{ background: '#1c1917' }}>EUR (€)</option>
-                        <option value="GBP" style={{ background: '#1c1917' }}>GBP (£)</option>
-                        <option value="CAD" style={{ background: '#1c1917' }}>CAD (CA$)</option>
+                        <option value="USD" style={{ background: 'var(--surface)', color: 'var(--on-surface)' }}>USD ($)</option>
+                        <option value="NGN" style={{ background: 'var(--surface)', color: 'var(--on-surface)' }}>NGN (₦)</option>
+                        <option value="EUR" style={{ background: 'var(--surface)', color: 'var(--on-surface)' }}>EUR (€)</option>
+                        <option value="GBP" style={{ background: 'var(--surface)', color: 'var(--on-surface)' }}>GBP (£)</option>
+                        <option value="CAD" style={{ background: 'var(--surface)', color: 'var(--on-surface)' }}>CAD (CA$)</option>
                       </select>
                     </div>
                   </div>
 
-                  <div style={styles.grid2}>
+                  <div className="responsive-2col" style={styles.grid2}>
                     <div>
                       <label style={styles.label}>Registration Open Date</label>
                       <input type="datetime-local" value={newEvent.registration_start} onChange={e => setNewEvent({...newEvent, registration_start: e.target.value})} required style={styles.input} />
@@ -344,7 +344,7 @@ const OwnerDashboard = () => {
                 <h3 style={styles.sectionTitle}>
                   <span style={styles.iconBadge}><ImageIcon size={18} /></span> Event Graphics
                 </h3>
-                <div style={styles.grid3}>
+                <div className="responsive-3col" style={styles.grid3}>
                   <div>
                     <label style={styles.label}>Landscape Banner (16:9)</label>
                     <input type="file" accept="image/*" onChange={e => setBannerImage(e.target.files[0])} required style={{ ...styles.input, width: '100%' }} />
@@ -390,7 +390,7 @@ const OwnerDashboard = () => {
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                   {/* Category Headers */}
-                  <div style={{ ...styles.ticketBuilderRow, backgroundColor: 'transparent', border: '1px solid transparent', paddingBottom: 0, paddingTop: 0, marginBottom: '-0.5rem', fontSize: '0.75rem', fontWeight: 900, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                  <div className="hide-on-mobile" style={{ ...styles.ticketBuilderRow, backgroundColor: 'transparent', border: '1px solid transparent', paddingBottom: 0, paddingTop: 0, marginBottom: '-0.5rem', fontSize: '0.75rem', fontWeight: 900, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
                     <div style={{ flex: 2, paddingLeft: '19px' }}>Category Name</div>
                     <div style={{ flex: 1, paddingLeft: '19px' }}>Price ({newEvent.currency === 'NGN' ? '₦' : newEvent.currency === 'EUR' ? '€' : newEvent.currency === 'GBP' ? '£' : newEvent.currency === 'CAD' ? 'CA$' : '$'})</div>
                     <div style={{ flex: 1, paddingLeft: '19px' }}>Capacity</div>
@@ -399,7 +399,7 @@ const OwnerDashboard = () => {
                   </div>
 
                   {ticketTypes.map((t, idx) => (
-                    <div key={idx} style={styles.ticketBuilderRow}>
+                    <div key={idx} className="responsive-builder-row" style={styles.ticketBuilderRow}>
                       <input placeholder="Category (e.g. VIP, Early Bird)" value={t.name} onChange={e => handleTicketTypeChange(idx, 'name', e.target.value)} required style={{...styles.input, flex: 2}} />
                       <input type="number" min="0" step="0.01" placeholder="Price" value={t.price} onChange={e => handleTicketTypeChange(idx, 'price', e.target.value)} required style={{...styles.input, flex: 1}} />
                       <input type="number" min="1" placeholder="Capacity" value={t.quantity} onChange={e => handleTicketTypeChange(idx, 'quantity', parseInt(e.target.value) || 0)} required style={{...styles.input, flex: 1}} />
@@ -459,7 +459,7 @@ const OwnerDashboard = () => {
                 
                 {eventVendors.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-                    <div style={{ ...styles.ticketBuilderRow, backgroundColor: 'transparent', border: '1px solid transparent', paddingBottom: 0, paddingTop: 0, marginBottom: '-0.5rem', fontSize: '0.75rem', fontWeight: 900, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                    <div className="hide-on-mobile" style={{ ...styles.ticketBuilderRow, backgroundColor: 'transparent', border: '1px solid transparent', paddingBottom: 0, paddingTop: 0, marginBottom: '-0.5rem', fontSize: '0.75rem', fontWeight: 900, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
                       <div style={{ flex: 1.5, paddingLeft: '19px' }}>Service Type</div>
                       <div style={{ flex: 2, paddingLeft: '19px' }}>Vendor Name</div>
                       <div style={{ flex: 2, paddingLeft: '19px' }}>Vendor Email</div>
@@ -469,7 +469,7 @@ const OwnerDashboard = () => {
 
                     {eventVendors.map((v, idx) => (
                       <div key={`vendor-${idx}`} style={{...styles.ticketBuilderRow, flexDirection: 'column', alignItems: 'stretch', gap: '0.8rem'}}>
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <div className="responsive-builder-row" style={{ gap: '1rem', alignItems: 'center' }}>
                           <select value={v.role} onChange={e => handleVendorChange(idx, 'role', e.target.value)} required style={{...styles.input, flex: 1.5, backgroundColor: 'var(--bg-color)', cursor: 'pointer'}}>
                             {vendorTypes.map(vt => (
                               <option key={vt} value={vt}>{vt.replace('_', ' ')}</option>
@@ -641,26 +641,26 @@ const OwnerDashboard = () => {
 };
 
 const styles = {
-  container: { padding: '4rem 6rem', maxWidth: '1400px', margin: '0 auto', color: 'var(--on-surface)' },
+  container: { padding: 'clamp(1.5rem, 6vw, 4rem) clamp(1.2rem, 6vw, 6rem)', maxWidth: '1400px', margin: '0 auto', color: 'var(--on-surface)' },
   center: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4rem' },
+  header: { justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4rem', gap: '1.5rem' },
   title: { fontSize: '2.5rem' },
   addBtn: { display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', borderRadius: '12px', fontSize: '0.95rem', fontWeight: 800, cursor: 'pointer', border: 'none' },
-  list: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '3rem' },
+  list: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(400px, 100%), 1fr))', gap: '3rem' },
   listItem: { borderRadius: '32px', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' },
   imageWrapper: { height: '240px', width: '100%', position: 'relative' },
   bannerImg: { width: '100%', height: '100%', objectFit: 'cover' },
-  dayBadge: { position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'var(--primary)', color: 'white', padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900, letterSpacing: '1px' },
+  dayBadge: { position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'var(--primary)', color: 'var(--on-primary)', padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900, letterSpacing: '1px' },
   itemContent: { padding: '2.5rem', display: 'flex', flexDirection: 'column', flex: 1 },
   actionBtn: { flex: 1, padding: '12px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', border: 'none', textAlign: 'center' },
-  modalOverlay: { position: 'fixed', inset: 0, zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)', display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto', padding: '2rem 0' },
-  modalContent: { width: '90%', maxWidth: '1350px', borderRadius: '40px', padding: '3.5rem', overflowY: 'auto', maxHeight: '90vh' },
+  modalOverlay: { position: 'fixed', inset: 0, zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)', display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto', padding: 'clamp(1rem, 4vw, 2rem) 0' },
+  modalContent: { width: '90%', maxWidth: '1350px', borderRadius: '40px', padding: 'clamp(1.5rem, 5vw, 3.5rem)', overflowY: 'auto', maxHeight: '90vh' },
   modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' },
   closeBtn: { background: 'transparent', border: 'none', color: 'var(--on-surface)', cursor: 'pointer' },
   form: { display: 'flex', flexDirection: 'column', gap: '2rem' },
   formSection: { display: 'flex', flexDirection: 'column', gap: '1.2rem' },
-  grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' },
-  grid3: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem' },
+  grid2: { gap: '2rem' },
+  grid3: { gap: '2rem' },
   input: { padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--glass-border)', backgroundColor: 'var(--surface)', color: 'var(--on-surface)', fontSize: '1rem', outline: 'none', fontWeight: 600 },
   label: { fontSize: '0.8rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '0.5rem', display: 'block' },
   ticketBuilderRow: { padding: '1.2rem', borderRadius: '16px', display: 'flex', gap: '1rem', alignItems: 'center', backgroundColor: 'var(--surface-tint)', border: '1px solid var(--glass-border)' },

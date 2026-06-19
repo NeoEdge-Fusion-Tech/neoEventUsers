@@ -44,7 +44,7 @@ const RegisterType = () => {
                 <h3 style={styles.cardTitle}>{opt.title}</h3>
                 <p style={styles.cardDesc}>{opt.desc}</p>
               </div>
-              <ChevronRight size={24} color="#ccc" />
+              <ChevronRight size={24} color="var(--on-surface-variant)" />
             </Link>
           ))}
         </div>
@@ -58,13 +58,13 @@ const RegisterType = () => {
 };
 
 const styles = {
-  container: { height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', color: 'var(--on-surface)' },
-  content: { textAlign: 'center', maxWidth: '800px', width: '100%', padding: '20px' },
-  title: { fontSize: '2.5rem', fontWeight: 900, marginBottom: '10px' },
+  container: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', color: 'var(--on-surface)' },
+  content: { textAlign: 'center', maxWidth: '800px', width: '100%', padding: 'clamp(1.2rem, 5vw, 2.5rem)' },
+  title: { fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', fontWeight: 900, marginBottom: '10px' },
   subtitle: { color: 'var(--on-surface-variant)', marginBottom: '40px' },
   grid: { display: 'flex', gap: '20px', flexDirection: 'column' },
-  card: { 
-    display: 'flex', alignItems: 'center', padding: '30px', 
+  card: {
+    display: 'flex', alignItems: 'center', padding: 'clamp(1.2rem, 4vw, 1.875rem)',
     background: 'var(--glass-bg)',
     backdropFilter: 'var(--glamour-blur)',
     border: '1px solid var(--glass-border)',

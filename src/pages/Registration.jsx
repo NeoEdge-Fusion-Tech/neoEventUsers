@@ -171,10 +171,10 @@ const Registration = () => {
 
   if (success) {
     return (
-      <div className="registration-container" style={{ textAlign: 'center', padding: '8rem 2rem' }}>
-        <div className="glass" style={{ maxWidth: '650px', margin: '0 auto', padding: '4rem', borderRadius: '40px' }}>
+      <div className="registration-container" style={{ textAlign: 'center', padding: 'clamp(3rem, 12vw, 8rem) clamp(1.2rem, 5vw, 2rem)' }}>
+        <div className="glass" style={{ maxWidth: '650px', margin: '0 auto', padding: 'clamp(1.75rem, 6vw, 4rem)', borderRadius: '40px' }}>
           <CheckCircle size={80} color="#22c55e" style={{ marginBottom: '2rem' }} />
-          <h1 style={{ fontSize: '3rem', fontWeight: 950, marginBottom: '1.5rem', letterSpacing: '-1px' }}>Registration <span style={{ color: 'var(--primary)' }}>Successful!</span></h1>
+          <h1 style={{ fontSize: 'clamp(1.9rem, 6vw, 3rem)', fontWeight: 950, marginBottom: '1.5rem', letterSpacing: '-1px' }}>Registration <span style={{ color: 'var(--primary)' }}>Successful!</span></h1>
           <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.15rem', marginBottom: '2rem', lineHeight: '1.7', fontWeight: 500 }}>
             Your digital pass sequence has been synthesized and dispatched. 
             {purchaseType === 'group' ? (
@@ -194,14 +194,14 @@ const Registration = () => {
   }
 
   return (
-    <div className="registration-container" style={{ padding: '4rem 6rem', maxWidth: '1400px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1.1fr 1.2fr', gap: '6rem', color: 'var(--on-surface)' }}>
+    <div className="registration-container responsive-layout-grid-equal" style={{ padding: 'clamp(1.5rem, 6vw, 4rem) clamp(1.2rem, 6vw, 6rem)', maxWidth: '1400px', margin: '0 auto', gap: 'clamp(2rem, 6vw, 6rem)', color: 'var(--on-surface)' }}>
       {/* Event Details */}
       <div>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--on-surface-variant)', textDecoration: 'none', fontWeight: 800, fontSize: '0.9rem', marginBottom: '3rem' }}>
           <ArrowLeft size={16} /> BACK
         </Link>
         <span style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '4px' }}>ACCESS GATEWAY</span>
-        <h1 style={{ fontSize: '4rem', fontWeight: 950, marginBottom: '2rem', letterSpacing: '-1.5px', marginTop: '0.5rem' }}>{event.title}</h1>
+        <h1 style={{ fontSize: 'clamp(2.2rem, 6vw, 4rem)', fontWeight: 950, marginBottom: '2rem', letterSpacing: '-1.5px', marginTop: '0.5rem' }}>{event.title}</h1>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '3.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--on-surface-variant)' }}>
@@ -243,7 +243,7 @@ const Registration = () => {
         {event.vendors && event.vendors.length > 0 && (
           <div style={{ marginTop: '4.5rem' }}>
             <h3 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '2rem', letterSpacing: '-0.5px' }}>Event Vendors</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '1.5rem' }}>
               {event.vendors.map(v => (
                 <div key={v.id} className="glass" style={{ padding: '2rem', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid var(--glass-border)', background: 'linear-gradient(145deg, var(--surface-tint) 0%, transparent 100%)' }}>
                   <div>
@@ -268,8 +268,8 @@ const Registration = () => {
       </div>
 
       {/* Ticket Purchase Interactive Module */}
-      <div className="glass" style={{ padding: '3.5rem', borderRadius: '40px' }}>
-        <h2 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '2.5rem', letterSpacing: '-0.5px' }}>Acquire Access</h2>
+      <div className="glass" style={{ padding: 'clamp(1.5rem, 5vw, 3.5rem)', borderRadius: '40px' }}>
+        <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.2rem)', fontWeight: 900, marginBottom: '2.5rem', letterSpacing: '-0.5px' }}>Acquire Access</h2>
 
         {errorMsg && (
           <div className="glass" style={{ padding: '1.2rem', borderRadius: '16px', border: '1px solid #ef4444', color: '#ef4444', background: 'rgba(239,68,68,0.08)', fontWeight: 700, marginBottom: '2rem' }}>
@@ -328,7 +328,7 @@ const Registration = () => {
               border: 'none', 
               cursor: 'pointer',
               background: purchaseType === 'individual' ? 'var(--primary)' : 'var(--surface-highest)',
-              color: purchaseType === 'individual' ? '#fff' : 'var(--on-surface)'
+              color: purchaseType === 'individual' ? 'var(--on-primary)' : 'var(--on-surface)'
             }}
           >
             <User size={16} style={{ marginRight: '6px' }} /> Individual
@@ -344,7 +344,7 @@ const Registration = () => {
               border: 'none', 
               cursor: 'pointer',
               background: purchaseType === 'group' ? 'var(--primary)' : 'var(--surface-highest)',
-              color: purchaseType === 'group' ? '#fff' : 'var(--on-surface)'
+              color: purchaseType === 'group' ? 'var(--on-primary)' : 'var(--on-surface)'
             }}
           >
             <Users size={16} style={{ marginRight: '6px' }} /> Group Pass
@@ -355,7 +355,7 @@ const Registration = () => {
           {purchaseType === 'individual' ? (
             <>
               {/* Individual Form */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="responsive-2col" style={{ gap: '1rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                   <label style={styles.label}>First Name</label>
                   <div className="glass" style={styles.inputWrapper}>
@@ -450,7 +450,7 @@ const Registration = () => {
                         </button>
                       )}
                     </div>
-                    <div style={styles.grid2}>
+                    <div className="responsive-2col" style={styles.grid2}>
                       <input 
                         placeholder="First Name" 
                         value={m.first_name} 
@@ -604,7 +604,7 @@ const styles = {
   inputPlain: { padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)', backgroundColor: 'var(--surface)', color: 'var(--on-surface)', fontSize: '0.9rem', outline: 'none', fontWeight: 600 },
   dropzone: { height: '120px', border: '2px dashed rgba(255, 177, 115, 0.3)', borderRadius: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', position: 'relative', cursor: 'pointer' },
   actionBtn: { display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer' },
-  grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }
+  grid2: { gap: '1rem' }
 };
 
 export default Registration;

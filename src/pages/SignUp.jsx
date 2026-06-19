@@ -24,6 +24,14 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const errorMessages = error
+    ? Object.entries(error).flatMap(([field, messages]) => {
+        const list = Array.isArray(messages) ? messages : [messages];
+        const label = field === 'detail' || field === 'non_field_errors' ? null : field.replace(/_/g, ' ');
+        return list.map((m) => (label ? `${label}: ${m}` : m));
+      })
+    : [];
+
   useEffect(() => {
     if (type === 'vendor') {
       const fetchTypes = async () => {
@@ -89,10 +97,14 @@ const Signup = () => {
         
         <h2 style={styles.title}>Create {type === 'vendor' ? 'Vendor' : type === 'attendee' ? 'Attendee' : 'Owner'} Account</h2>
 
-        {error && <div style={styles.errorBox}>{JSON.stringify(error)}</div>}
+        {error && (
+          <div style={styles.errorBox}>
+            {errorMessages.map((msg, i) => <div key={i}>{msg}</div>)}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.inputRow}>
+          <div className="responsive-row" style={styles.inputRow}>
             <div style={styles.field}>
               <label style={styles.label}>First Name</label>
               <input name="first_name" onChange={handleChange} required style={styles.input} />
@@ -117,7 +129,7 @@ const Signup = () => {
 
           {type === 'owner' && (
             <>
-              <div style={styles.inputRow}>
+              <div className="responsive-row" style={styles.inputRow}>
                 <div style={styles.field}>
                   <label style={styles.label}>Country</label>
                   <select name="country" onChange={handleChange} required style={styles.input} value={formData.country}>
@@ -139,7 +151,7 @@ const Signup = () => {
 
           {type === 'vendor' && (
             <>
-              <div style={styles.inputRow}>
+              <div className="responsive-row" style={styles.inputRow}>
                 <div style={styles.field}>
                   <label style={styles.label}>Phone Number</label>
                   <input name="phone_number" placeholder="+234..." onChange={handleChange} required style={styles.input} />
@@ -156,7 +168,7 @@ const Signup = () => {
               </div>
               
               {formData.vendor_subtype === 'OTHER' && (
-                <div style={styles.inputRow}>
+                <div className="responsive-row" style={styles.inputRow}>
                   <div style={styles.field}>
                     <label style={styles.label}>Specify Service Type</label>
                     <input name="customType" placeholder="e.g. DJ, Florist" value={customType} onChange={e => setCustomType(e.target.value)} required style={styles.input} />
@@ -164,7 +176,7 @@ const Signup = () => {
                 </div>
               )}
 
-              <div style={styles.inputRow}>
+              <div className="responsive-row" style={styles.inputRow}>
                 <div style={styles.field}>
                   <label style={styles.label}>Business Name</label>
                   <input name="business_name" onChange={handleChange} required style={styles.input} />
@@ -176,7 +188,7 @@ const Signup = () => {
               </div>
 
               {formData.is_registered && (
-                <div style={styles.inputRow}>
+                <div className="responsive-row" style={styles.inputRow}>
                   <div style={styles.field}>
                     <label style={styles.label}>Registration Number</label>
                     <input name="registration_number" onChange={handleChange} required style={styles.input} />
@@ -191,7 +203,7 @@ const Signup = () => {
                 </div>
               )}
 
-              <div style={styles.inputRow}>
+              <div className="responsive-row" style={styles.inputRow}>
                 <div style={styles.field}>
                   <label style={styles.label}>Address</label>
                   <input name="address" onChange={handleChange} required style={styles.input} />
@@ -202,7 +214,7 @@ const Signup = () => {
                 </div>
               </div>
 
-              <div style={styles.inputRow}>
+              <div className="responsive-row" style={styles.inputRow}>
                 <div style={styles.field}>
                   <label style={styles.label}>State/County</label>
                   <input name="state_or_county" onChange={handleChange} required style={styles.input} />
@@ -218,7 +230,7 @@ const Signup = () => {
             </>
           )}
 
-          <div style={styles.inputRow}>
+          <div className="responsive-row" style={styles.inputRow}>
             <div style={styles.field}>
               <label style={styles.label}>Password</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -249,10 +261,10 @@ const Signup = () => {
 };
 
 const styles = {
-  container: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', backgroundColor: 'var(--bg-color)', color: 'var(--on-surface)' },
-  formCard: { width: '100%', maxWidth: '700px', padding: '40px', borderRadius: '24px', position: 'relative' },
+  container: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'clamp(1.2rem, 5vw, 2.5rem)', backgroundColor: 'var(--bg-color)', color: 'var(--on-surface)' },
+  formCard: { width: '100%', maxWidth: '700px', padding: 'clamp(1.5rem, 5vw, 2.5rem)', borderRadius: '24px', position: 'relative' },
   backBtn: { position: 'absolute', top: '20px', left: '20px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--on-surface-variant)' },
-  title: { fontSize: '1.8rem', fontWeight: 800, marginBottom: '30px', textAlign: 'center', color: 'var(--on-surface)' },
+  title: { fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', fontWeight: 800, marginBottom: '30px', marginTop: '2.5rem', textAlign: 'center', color: 'var(--on-surface)' },
   form: { display: 'flex', flexDirection: 'column', gap: '20px' },
   inputRow: { display: 'flex', gap: '15px' },
   field: { flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' },

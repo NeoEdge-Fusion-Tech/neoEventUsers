@@ -96,12 +96,17 @@ img, video {
    (flex-direction / grid-template-columns) can't live inline. Apply these
    classNames alongside inline styles to collapse the rigid ones on mobile. */
 
+/* These use !important on the mobile override only, so an inline
+   gridTemplateColumns/flexDirection authored for desktop (e.g. "1.1fr 1.2fr"
+   or "2fr 3fr 1fr 1fr auto") still wins on desktop, but can never block the
+   mobile collapse — no need to strip inline column definitions to use these. */
+
 .responsive-row {
   display: flex;
 }
 @media (max-width: 640px) {
   .responsive-row {
-    flex-direction: column;
+    flex-direction: column !important;
     align-items: stretch !important;
   }
 }
@@ -112,7 +117,59 @@ img, video {
 }
 @media (max-width: 640px) {
   .responsive-2col {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.responsive-3col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+@media (max-width: 900px) {
+  .responsive-3col {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+@media (max-width: 640px) {
+  .responsive-3col {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.responsive-4col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+@media (max-width: 900px) {
+  .responsive-4col {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+@media (max-width: 480px) {
+  .responsive-4col {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Builder rows (ticket categories, vendor assignments): a flex/grid row of
+   several inputs that needs to stack on mobile instead of squeezing. */
+.responsive-builder-row {
+  display: flex;
+}
+@media (max-width: 768px) {
+  .responsive-builder-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+}
+
+.hide-on-mobile {
+  display: revert;
+}
+@media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
   }
 }
 
@@ -124,7 +181,7 @@ img, video {
 }
 @media (max-width: 640px) {
   .responsive-event-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     gap: 1.25rem;
   }
 }
@@ -137,7 +194,7 @@ img, video {
 }
 @media (max-width: 1024px) {
   .responsive-dashboard-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     gap: 2.5rem;
   }
 }
@@ -149,7 +206,7 @@ img, video {
 }
 @media (max-width: 1024px) {
   .responsive-dashboard-grid-left {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     gap: 2.5rem;
   }
 }
@@ -162,7 +219,7 @@ img, video {
 }
 @media (max-width: 768px) {
   .responsive-layout-grid-equal {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     gap: 1.5rem;
   }
 }

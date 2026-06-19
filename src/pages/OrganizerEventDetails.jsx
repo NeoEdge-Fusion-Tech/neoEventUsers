@@ -352,24 +352,24 @@ const OrganizerEventDetails = () => {
   if (!event) return <div style={{ textAlign: 'center', padding: '10rem' }}>Event not found.</div>;
 
   return (
-    <div className="organizer-event-details" style={{ padding: '2rem 3rem', maxWidth: '1600px', margin: '0 auto', color: 'var(--on-surface)' }}>
+    <div className="organizer-event-details" style={{ padding: 'clamp(1.2rem, 5vw, 2rem) clamp(1.2rem, 5vw, 3rem)', maxWidth: '1600px', margin: '0 auto', color: 'var(--on-surface)' }}>
       <header style={{ marginBottom: '3rem' }}>
         <Link to="/owner/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--on-surface-variant)', textDecoration: 'none', fontWeight: 800, fontSize: '0.9rem', marginBottom: '2rem' }}>
           <ArrowLeft size={16} /> BACK TO MANAGEMENT
         </Link>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div className="responsive-row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', gap: '1.5rem' }}>
           <div>
             <span style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Event Management</span>
-            <h1 style={{ fontSize: '3.5rem', fontWeight: 900, letterSpacing: '-1px', marginTop: '0.2rem' }}>{event.title}</h1>
+            <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', fontWeight: 900, letterSpacing: '-1px', marginTop: '0.2rem' }}>{event.title}</h1>
           </div>
-          <div className="glass" style={{ padding: '0.6rem 1.4rem', borderRadius: '50px', display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--primary)', fontWeight: 800, border: '1px solid var(--primary)', fontSize: '0.85rem' }}>
+          <div className="glass" style={{ padding: '0.6rem 1.4rem', borderRadius: '50px', display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--primary)', fontWeight: 800, border: '1px solid var(--primary)', fontSize: '0.85rem', alignSelf: 'flex-start' }}>
             <ShieldCheck size={18} /> OWNER ACCESS
           </div>
         </div>
       </header>
 
       {/* High tech stats block */}
-      <div style={{ ...styles.statsRow, gridTemplateColumns: '1fr 1fr 1fr 1fr' }}>
+      <div className="responsive-4col" style={{ ...styles.statsRow, gridTemplateColumns: '1fr 1fr 1fr 1fr' }}>
         <div className="glass" style={styles.statCard}>
           <div style={styles.statHeader}>
             <Ticket size={24} color="var(--primary)" />
@@ -413,7 +413,7 @@ const OrganizerEventDetails = () => {
         </div>
       </div>
 
-      <div style={styles.tabs}>
+      <div className="scrollable-tabs-wrapper" style={{ ...styles.tabs }}>
         {[
           ['participants', `Participants (${registrations.length})`],
           ['checked_in', `Checked In Attendee (${checkedInCount})`],
@@ -428,16 +428,18 @@ const OrganizerEventDetails = () => {
             style={{
               ...styles.tabBtn,
               background: activeTab === tab ? 'linear-gradient(135deg,var(--primary),var(--primary-container))' : 'var(--surface-tint)',
-              color: activeTab === tab ? '#080C14' : 'var(--on-surface-variant)',
+              color: activeTab === tab ? 'var(--on-primary)' : 'var(--on-surface-variant)',
               border: activeTab === tab ? '1px solid var(--primary)' : '1px solid var(--glass-border)',
               boxShadow: activeTab === tab ? '0 0 15px rgba(255,177,115,0.3)' : 'none',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
           >{label}</button>
         ))}
       </div>
 
       {/* Display Content */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1fr', gap: '4rem', alignItems: 'flex-start' }}>
+      <div className="responsive-dashboard-grid" style={{ gridTemplateColumns: '2.5fr 1fr', gap: '4rem', alignItems: 'flex-start' }}>
 
         {/* Main section */}
         <div style={{ minWidth: 0 }}>
@@ -771,7 +773,7 @@ const OrganizerEventDetails = () => {
               {saveMsg && <div style={{ padding: '1rem', borderRadius: '12px', background: 'rgba(34,197,94,0.1)', color: '#22c55e', fontWeight: 700, marginBottom: '1.5rem' }}>{saveMsg}</div>}
               {saveError && <div style={{ padding: '1rem', borderRadius: '12px', background: 'rgba(239,68,68,0.08)', color: '#ef4444', fontWeight: 700, marginBottom: '1.5rem' }}>{saveError}</div>}
               <form onSubmit={handleSaveEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div className="responsive-2col" style={{ gap: '1.5rem' }}>
                   {[['title', 'Title', 'text'], ['venue_name', 'Venue Name', 'text'], ['venue_address', 'Venue Address', 'text'], ['country', 'Country', 'text'], ['state_or_county', 'State / County', 'text'], ['max_participants', 'Max Participants', 'number'], ['currency', 'Currency', 'text']].map(([field, label, type]) => (
                     <div key={field} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <label style={styles.editLabel}>{label}</label>
@@ -793,7 +795,7 @@ const OrganizerEventDetails = () => {
                 {/* Event Graphics Update */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem' }}>
                   <label style={{ ...styles.editLabel, fontSize: '1rem' }}>Event Graphics (Leave empty to keep existing)</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem' }}>
+                  <div className="responsive-3col" style={{ gap: '1.5rem' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <label style={styles.editLabel}>Landscape Banner (16:9)</label>
                       <input type="file" accept="image/*" onChange={e => setEditForm({ ...editForm, banner_image_file: e.target.files[0] })} style={styles.editInput} />
@@ -819,7 +821,7 @@ const OrganizerEventDetails = () => {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {editTickets.map((t, idx) => (
-                      <div key={idx} className="glass" style={{ padding: '1.5rem', borderRadius: '16px', display: 'grid', gridTemplateColumns: '2fr 3fr 1fr 1fr auto', gap: '1rem', alignItems: 'center' }}>
+                      <div key={idx} className="glass responsive-2col" style={{ padding: '1.5rem', borderRadius: '16px', gridTemplateColumns: '2fr 3fr 1fr 1fr auto', gap: '1rem', alignItems: 'center' }}>
                         <input placeholder="Name" value={t.name} onChange={e => handleTicketChange(idx, 'name', e.target.value)} style={styles.editInput} />
                         <input placeholder="Description" value={t.description} onChange={e => handleTicketChange(idx, 'description', e.target.value)} style={styles.editInput} />
                         <input type="number" placeholder="Price" value={t.price} onChange={e => handleTicketChange(idx, 'price', e.target.value)} style={styles.editInput} />
@@ -858,9 +860,9 @@ const OrganizerEventDetails = () => {
 
               {galleryData.photographers.length > 0 && (
                 <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
-                  <button onClick={() => { setGalleryPhotographer(''); fetchOwnerGallery(''); }} style={{ padding: '0.4rem 1rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 700, background: !galleryPhotographer ? 'var(--primary)' : 'rgba(255,177,115,0.08)', color: !galleryPhotographer ? '#080C14' : 'var(--primary)', border: '1px solid var(--primary)', cursor: 'pointer' }}>All</button>
+                  <button onClick={() => { setGalleryPhotographer(''); fetchOwnerGallery(''); }} style={{ padding: '0.4rem 1rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 700, background: !galleryPhotographer ? 'var(--primary)' : 'rgba(255,177,115,0.08)', color: !galleryPhotographer ? 'var(--on-primary)' : 'var(--primary)', border: '1px solid var(--primary)', cursor: 'pointer' }}>All</button>
                   {galleryData.photographers.map(p => (
-                    <button key={p.id} onClick={() => { setGalleryPhotographer(p.id); fetchOwnerGallery(p.id); }} style={{ padding: '0.4rem 1rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 700, background: galleryPhotographer === p.id ? 'var(--primary)' : 'rgba(255,177,115,0.08)', color: galleryPhotographer === p.id ? '#080C14' : 'var(--primary)', border: '1px solid var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <button key={p.id} onClick={() => { setGalleryPhotographer(p.id); fetchOwnerGallery(p.id); }} style={{ padding: '0.4rem 1rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 700, background: galleryPhotographer === p.id ? 'var(--primary)' : 'rgba(255,177,115,0.08)', color: galleryPhotographer === p.id ? 'var(--on-primary)' : 'var(--primary)', border: '1px solid var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                       <Camera size={12} />{p.full_name} · {p.photo_count}
                     </button>
                   ))}
@@ -931,7 +933,7 @@ const OrganizerEventDetails = () => {
 
                       {expandedVendorId === p.id && (
                         <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', background: 'rgba(0,0,0,0.15)', borderLeft: '3px solid var(--primary)' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                          <div className="responsive-2col" style={{ gap: '1.5rem' }}>
                             <div>
                               <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.3rem' }}>Business Name</div>
                               <div style={{ fontSize: '1.05rem', fontWeight: 700 }}>{p.vendor_business_name || 'N/A'}</div>
