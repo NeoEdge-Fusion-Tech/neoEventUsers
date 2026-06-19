@@ -39,50 +39,50 @@ const MyEvents = () => {
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '10rem' }}><Loader2 className="animate-spin" size={48} color="var(--primary)" /></div>;
 
   const EventSection = ({ title, events, icon: Icon, emptyMsg, color = 'var(--primary)' }) => (
-    <section style={{ marginBottom: '6rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '3.5rem' }}>
-        <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: `rgba(${color === 'var(--primary)' ? '255,177,115' : '176,196,222'}, 0.1)`, display: 'flex', justifyContent: 'center', alignItems: 'center', color: color }}>
-          <Icon size={24} strokeWidth={2.5} />
+    <section style={{ marginBottom: '3rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: `rgba(${color === 'var(--primary)' ? '255,177,115' : '176,196,222'}, 0.1)`, display: 'flex', justifyContent: 'center', alignItems: 'center', color: color }}>
+          <Icon size={20} strokeWidth={2.5} />
         </div>
-        <h2 style={{ fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-1px' }}>{title}</h2>
+        <h2 style={{ fontSize: 'clamp(1.4rem, 3vw, 1.8rem)', fontWeight: 900, letterSpacing: '-0.5px' }}>{title}</h2>
         <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)', marginLeft: '1rem' }}></div>
       </div>
 
       {events.length === 0 ? (
-        <div className="glass" style={{ padding: '4rem', textAlign: 'center', borderRadius: '32px', border: '1px solid var(--glass-border)' }}>
-          <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.1rem', fontWeight: 500 }}>{emptyMsg}</p>
+        <div className="glass" style={{ padding: '3rem', textAlign: 'center', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
+          <p style={{ color: 'var(--on-surface-variant)', fontSize: '1rem', fontWeight: 500 }}>{emptyMsg}</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '2.5rem' }}>
+        <div className="responsive-event-grid" style={{ gap: '1.5rem' }}>
           {events.map(reg => (
             <div 
               key={reg.id} 
               onClick={() => navigate(`/event-console/${reg.id}`)}
               className="glass hover-card"
-              style={{ borderRadius: '28px', overflow: 'hidden', cursor: 'pointer', border: '1px solid var(--glass-border)', transition: 'all 0.3s ease' }}
+              style={{ borderRadius: '20px', overflow: 'hidden', cursor: 'pointer', border: '1px solid var(--glass-border)', transition: 'all 0.3s ease' }}
             >
-              <div style={{ height: '200px', position: 'relative' }}>
+              <div style={{ height: '140px', position: 'relative' }}>
                 <img src={reg.event_banner || '/placeholder.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(to top, rgba(13, 20, 32, 0.8), transparent)' }}></div>
                 {reg.is_event_active && (
-                  <div style={{ position: 'absolute', top: '1.2rem', right: '1.2rem', padding: '0.5rem 1.2rem', background: 'var(--primary)', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900, color: 'var(--on-primary)', boxShadow: '0 4px 15px rgba(255,177,115,0.3)' }}>LIVE NOW</div>
+                  <div style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.4rem 0.8rem', background: 'var(--primary)', borderRadius: '50px', fontSize: '0.7rem', fontWeight: 900, color: 'var(--on-primary)', boxShadow: '0 4px 15px rgba(255,177,115,0.3)' }}>LIVE NOW</div>
                 )}
               </div>
-              <div style={{ padding: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                   <Play size={14} fill={reg.is_event_active ? 'var(--primary)' : 'var(--on-surface-variant)'} color={reg.is_event_active ? 'var(--primary)' : 'var(--on-surface-variant)'} />
-                   <span style={{ fontSize: '0.75rem', fontWeight: 800, color: reg.is_event_active ? 'var(--primary)' : 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+              <div style={{ padding: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.6rem' }}>
+                   <Play size={12} fill={reg.is_event_active ? 'var(--primary)' : 'var(--on-surface-variant)'} color={reg.is_event_active ? 'var(--primary)' : 'var(--on-surface-variant)'} />
+                   <span style={{ fontSize: '0.7rem', fontWeight: 800, color: reg.is_event_active ? 'var(--primary)' : 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px' }}>
                      {reg.is_event_active ? 'Session Active' : (new Date(reg.event_start_date) > new Date() ? 'Upcoming' : 'Archived')}
                    </span>
                 </div>
-                <h3 style={{ fontSize: '1.6rem', marginBottom: '1.2rem', fontWeight: 900 }}>{reg.event_title}</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem', color: 'var(--on-surface-variant)', fontSize: '0.95rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><Calendar size={18} color="var(--primary)" /> {formatDateRange(reg.event_start_date, reg.event_end_date)}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}><MapPin size={18} color="var(--primary)" /> {reg.event_location}</div>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '0.8rem', fontWeight: 900, lineHeight: '1.25' }}>{reg.event_title}</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--on-surface-variant)', fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}><Calendar size={15} color="var(--primary)" /> {formatDateRange(reg.event_start_date, reg.event_end_date)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}><MapPin size={15} color="var(--primary)" /> {reg.event_location}</div>
                 </div>
-                <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-                   <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--surface-tint)', display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'all 0.3s ease' }}>
-                      <ChevronRight size={24} />
+                <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'flex-end' }}>
+                   <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--surface-tint)', display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'all 0.3s ease' }}>
+                      <ChevronRight size={18} />
                    </div>
                 </div>
               </div>
@@ -94,11 +94,11 @@ const MyEvents = () => {
   );
 
   return (
-    <div className="my-events-container" style={{ padding: '4rem 6rem', maxWidth: '1600px', margin: '0 auto' }}>
-      <header style={{ marginBottom: '6rem' }}>
-        <span style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '4px' }}>Timeline & History</span>
-        <h1 style={{ fontSize: '4.5rem', fontWeight: 900, letterSpacing: '-2px', marginTop: '0.5rem' }}>Experience <span style={{ color: 'var(--primary)' }}>Chronicle</span></h1>
-        <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.3rem', fontWeight: 500, marginTop: '0.5rem' }}>Your personal journey through global masterpieces.</p>
+    <div className="my-events-container responsive-page-pad" style={{ maxWidth: '1600px', margin: '0 auto' }}>
+      <header style={{ marginBottom: '3rem' }}>
+        <span style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '3px' }}>Timeline & History</span>
+        <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', fontWeight: 900, letterSpacing: '-1.5px', marginTop: '0.5rem' }}>Experience <span style={{ color: 'var(--primary)' }}>Chronicle</span></h1>
+        <p style={{ color: 'var(--on-surface-variant)', fontSize: 'clamp(1rem, 2vw, 1.2rem)', fontWeight: 500, marginTop: '0.5rem' }}>Your personal journey through global masterpieces.</p>
       </header>
       
       <EventSection title="Happening Now" events={active} icon={Globe} emptyMsg="No active live sessions in your chronicle." color="var(--primary)" />

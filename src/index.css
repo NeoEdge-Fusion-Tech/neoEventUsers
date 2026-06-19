@@ -44,12 +44,37 @@
   --accent-glow: rgba(255, 177, 115, 0.1);
   --surface-tint: rgba(15, 23, 42, 0.04);
   --surface-tint-strong: rgba(15, 23, 42, 0.08);
+  
+  /* Contrast adjustments for light mode */
+  --primary: #E05E00;
+  --primary-container: #F97316;
+  --secondary: #EA580C;
+  --on-primary: #FFFFFF;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+/* Most of this app sizes type/spacing in rem off the root font-size.
+   Scaling the root down on small screens shrinks all of it together,
+   instead of every component needing its own breakpoint. */
+html {
+  font-size: 100%;
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 87.5%; /* ~14px base */
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 75%; /* ~12px base */
+  }
 }
 
 body {
@@ -60,6 +85,166 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+img, video {
+  max-width: 100%;
+}
+
+/* ── Responsive layout utilities ──────────────────────────────────────────
+   Most pages build layout with inline styles, so structural breakpoints
+   (flex-direction / grid-template-columns) can't live inline. Apply these
+   classNames alongside inline styles to collapse the rigid ones on mobile. */
+
+.responsive-row {
+  display: flex;
+}
+@media (max-width: 640px) {
+  .responsive-row {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+}
+
+.responsive-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 640px) {
+  .responsive-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Responsive event list grid */
+.responsive-event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+@media (max-width: 640px) {
+  .responsive-event-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+/* Responsive sidebar layouts */
+.responsive-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 4rem;
+}
+@media (max-width: 1024px) {
+  .responsive-dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+}
+
+.responsive-dashboard-grid-left {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 4rem;
+}
+@media (max-width: 1024px) {
+  .responsive-dashboard-grid-left {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+}
+
+/* Responsive layout equal split (registration, modals, etc.) */
+.responsive-layout-grid-equal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+}
+@media (max-width: 768px) {
+  .responsive-layout-grid-equal {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+/* Horizontally scrollable navigation tabs wrapper */
+.scrollable-tabs-wrapper {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE/Edge */
+  gap: 0.8rem;
+  width: 100%;
+  padding-bottom: 4px;
+}
+/* Responsive ticket card */
+.ticket-card-responsive {
+  display: flex;
+  border-radius: 24px;
+  overflow: hidden;
+  min-height: 180px;
+}
+.ticket-card-banner {
+  width: 220px;
+  position: relative;
+  flex-shrink: 0;
+}
+.ticket-card-content {
+  flex: 1;
+  padding: 1.5rem;
+  display: flex;
+  border-left: 2px dashed var(--glass-border);
+  position: relative;
+}
+.ticket-notch {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-color);
+  border: 1px solid var(--glass-border);
+}
+.ticket-notch-top {
+  top: -16px;
+  right: 204px;
+}
+.ticket-notch-bottom {
+  bottom: -16px;
+  right: 204px;
+}
+
+@media (max-width: 768px) {
+  .ticket-card-responsive {
+    flex-direction: column;
+    min-height: auto;
+  }
+  .ticket-card-banner {
+    width: 100%;
+    height: 130px;
+  }
+  .ticket-card-content {
+    border-left: none;
+    border-top: 2px dashed var(--glass-border);
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .ticket-notch {
+    display: none;
+  }
+}
+
+.responsive-page-pad {
+  padding: 4rem 6rem;
+}
+@media (max-width: 768px) {
+  .responsive-page-pad {
+    padding: 2rem 1.5rem;
+  }
+}
+@media (max-width: 480px) {
+  .responsive-page-pad {
+    padding: 1.5rem 1rem;
+  }
 }
 
 h1, h2, h3, h4 {

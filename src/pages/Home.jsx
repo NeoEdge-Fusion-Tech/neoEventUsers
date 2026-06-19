@@ -43,14 +43,14 @@ const Home = () => {
           <span style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '1.5rem', display: 'block' }}>
             Elite Event Discovery
           </span>
-          <h1 style={{ fontSize: '5.5rem', marginBottom: '1.5rem', fontWeight: 900, lineHeight: '1.1', maxWidth: '1000px', letterSpacing: '-3px' }}>
-            Unveiling 
+          <h1 style={{ fontSize: 'clamp(2.4rem, 8vw, 5.5rem)', marginBottom: '1.5rem', fontWeight: 900, lineHeight: '1.1', maxWidth: '1000px', letterSpacing: '-2px' }}>
+            Unveiling
             <span style={{ color: 'transparent', WebkitTextStroke: '1px var(--on-surface)', opacity: 0.6 }}>Artistry</span> in Every <span style={{ color: 'var(--primary)' }}>Moment</span>
           </h1>
-          <p style={{ fontSize: '1.4rem', color: 'var(--on-surface-variant)', marginBottom: '4rem', maxWidth: '700px', margin: '0 auto 4rem', fontWeight: 500 }}>
+          <p style={{ fontSize: 'clamp(1rem, 2.5vw, 1.4rem)', color: 'var(--on-surface-variant)', marginBottom: '4rem', maxWidth: '700px', margin: '0 auto 4rem', fontWeight: 500 }}>
             The definitive ecosystem for secure ticketing and AI-powered memory distribution.
           </p>
-          
+
           <div className="search-bar glass" style={{
             display: 'flex',
             padding: '0.6rem',
@@ -59,35 +59,36 @@ const Home = () => {
             maxWidth: '650px',
             margin: '0 auto',
             alignItems: 'center',
-            gap: '1rem'
+            gap: '0.5rem'
           }}>
-            <div style={{ marginLeft: '1.2rem', color: 'var(--primary)' }}><Search size={24} strokeWidth={2.5} /></div>
-            <input 
-              type="text" 
-              placeholder="Search global galas, summits, and premieres..." 
-              style={{ 
-                background: 'transparent', 
-                border: 'none', 
-                color: 'var(--on-surface)', 
-                flex: 1, 
-                fontSize: '1.1rem',
+            <div style={{ marginLeft: '0.8rem', color: 'var(--primary)', flexShrink: 0 }}><Search size={20} strokeWidth={2.5} /></div>
+            <input
+              type="text"
+              placeholder="Search galas, summits, premieres..."
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--on-surface)',
+                flex: 1,
+                minWidth: 0,
+                fontSize: 'clamp(0.85rem, 2vw, 1.1rem)',
                 fontWeight: 600,
                 outline: 'none'
-              }} 
+              }}
             />
-            <button className="btn-primary" style={{ borderRadius: '18px', padding: '1rem 2.5rem', fontSize: '1rem', fontWeight: 800 }}>EXPLORE</button>
+            <button className="btn-primary" style={{ borderRadius: '18px', padding: 'clamp(0.7rem, 2vw, 1rem) clamp(1.2rem, 4vw, 2.5rem)', fontSize: 'clamp(0.85rem, 2vw, 1rem)', fontWeight: 800, flexShrink: 0 }}>EXPLORE</button>
           </div>
         </div>
       </section>
 
       {/* Featured Masterpieces */}
-      <section className="featured" style={{ padding: '4rem 4rem 10rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4rem' }}>
+      <section className="featured" style={{ padding: 'clamp(2rem, 6vw, 4rem) clamp(1.2rem, 6vw, 4rem) clamp(4rem, 10vw, 10rem)' }}>
+        <div className="responsive-row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4rem', gap: '1.5rem' }}>
           <div>
-            <h2 style={{ fontSize: '3.2rem', fontWeight: 900, letterSpacing: '-1.5px' }}>Curated <span style={{ color: 'var(--primary)' }}>Masterpieces</span></h2>
+            <h2 style={{ fontSize: 'clamp(1.9rem, 5vw, 3.2rem)', fontWeight: 900, letterSpacing: '-1.5px' }}>Curated <span style={{ color: 'var(--primary)' }}>Masterpieces</span></h2>
             <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.1rem', marginTop: '0.5rem' }}>Rare experiences happening in our ecosystem right now.</p>
           </div>
-          <button className="glass" style={{ color: 'var(--on-surface)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.7rem', padding: '1rem 2rem', borderRadius: '14px', fontSize: '0.9rem' }}>
+          <button className="glass" style={{ color: 'var(--on-surface)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.7rem', padding: '1rem 2rem', borderRadius: '14px', fontSize: '0.9rem', alignSelf: 'flex-start' }}>
             VIEW REPOSITORY <ArrowRight size={18} />
           </button>
         </div>
@@ -105,7 +106,7 @@ const Home = () => {
               <button onClick={() => setStatusFilter('PAST')} className={statusFilter === 'PAST' ? 'btn-primary' : 'glass'} style={{ padding: '0.8rem 1.5rem', borderRadius: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: statusFilter === 'PAST' ? 'var(--primary)' : 'var(--surface-tint)', color: statusFilter === 'PAST' ? 'var(--on-primary)' : 'var(--on-surface)' }}>Past</button>
             </div>
             
-            <div className="event-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '4rem' }}>
+            <div className="responsive-event-grid">
               {events
                 .filter(e => statusFilter === 'ALL' || getRegistrationStatus(e).toUpperCase().replace(/ /g, '_') === statusFilter)
                 .map(event => {
@@ -114,46 +115,46 @@ const Home = () => {
 
                   const cardContent = (
                     <>
-                      <div style={{ height: '320px', background: 'var(--surface-highest)', position: 'relative' }}>
+                      <div style={{ height: '200px', background: 'var(--surface-highest)', position: 'relative' }}>
                         <img src={event.banner_image || '/placeholder.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', display: 'flex', gap: '0.7rem' }}>
+                        <div style={{ position: 'absolute', top: '1rem', left: '1rem', display: 'flex', gap: '0.5rem' }}>
                           {event.is_currently_holding && (
-                            <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900, color: 'var(--primary)', border: '1px solid var(--primary)', background: 'var(--glass-bg)' }}>
+                            <div className="glass" style={{ padding: '0.4rem 0.8rem', borderRadius: '50px', fontSize: '0.7rem', fontWeight: 900, color: 'var(--primary)', border: '1px solid var(--primary)', background: 'var(--glass-bg)' }}>
                               LIVE
                             </div>
                           )}
-                          <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900, color: 'var(--on-surface)' }}>
+                          <div className="glass" style={{ padding: '0.4rem 0.8rem', borderRadius: '50px', fontSize: '0.7rem', fontWeight: 900, color: 'var(--on-surface)' }}>
                             {event.is_paid ? 'PREMIUM' : 'OPEN ACCESS'}
                           </div>
                         </div>
                       </div>
-                      <div style={{ padding: '3rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                          <Play size={16} fill="var(--primary)" color="var(--primary)" />
-                          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '2px' }}>{regStatus}</span>
+                      <div style={{ padding: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.8rem' }}>
+                          <Play size={12} fill="var(--primary)" color="var(--primary)" />
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{regStatus}</span>
                         </div>
-                        <h3 style={{ fontSize: '2.2rem', marginBottom: '1.5rem', fontWeight: 900, lineHeight: '1.2', letterSpacing: '-0.5px' }}>{event.title}</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', color: 'var(--on-surface-variant)', fontSize: '1rem', marginBottom: '3rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><Calendar size={20} color="var(--primary)" /> {formatDateRange(event.start_date, event.end_date)}</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><MapPin size={20} color="var(--primary)" /> {event.venue_name || event.location || 'Online / TBA'}</div>
+                        <h3 style={{ fontSize: '1.35rem', marginBottom: '0.8rem', fontWeight: 900, lineHeight: '1.25', letterSpacing: '-0.3px' }}>{event.title}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', color: 'var(--on-surface-variant)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}><Calendar size={16} color="var(--primary)" /> {formatDateRange(event.start_date, event.end_date)}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}><MapPin size={16} color="var(--primary)" /> {event.venue_name || event.location || 'Online / TBA'}</div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '2.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1.25rem' }}>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Starting At</span>
-                            <span style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--on-surface)' }}>{event.is_paid ? `$${event.price}` : 'VIP'}</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Starting At</span>
+                            <span style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--on-surface)' }}>{event.is_paid ? `$${event.price}` : 'VIP'}</span>
                           </div>
-                          <button className="btn-primary" style={{ padding: '1.2rem 2.5rem', borderRadius: '18px', fontWeight: 800, fontSize: '0.95rem', opacity: isClickable ? 1 : 0.5 }}>{isClickable ? 'OBTAIN ACCESS' : regStatus.toUpperCase()}</button>
+                          <button className="btn-primary" style={{ padding: '0.7rem 1.4rem', borderRadius: '12px', fontWeight: 800, fontSize: '0.85rem', opacity: isClickable ? 1 : 0.5 }}>{isClickable ? 'OBTAIN ACCESS' : regStatus.toUpperCase()}</button>
                         </div>
                       </div>
                     </>
                   );
 
                   return isClickable ? (
-                    <Link to={`/register/${event.id}`} key={event.id} className="event-card glass hover-card" style={{ borderRadius: '40px', overflow: 'hidden', textDecoration: 'none', color: 'inherit' }}>
+                    <Link to={`/register/${event.id}`} key={event.id} className="event-card glass hover-card" style={{ borderRadius: '24px', overflow: 'hidden', textDecoration: 'none', color: 'inherit' }}>
                       {cardContent}
                     </Link>
                   ) : (
-                    <div key={event.id} className="event-card glass" style={{ borderRadius: '40px', overflow: 'hidden', color: 'inherit', opacity: 0.8, cursor: 'not-allowed' }}>
+                    <div key={event.id} className="event-card glass" style={{ borderRadius: '24px', overflow: 'hidden', color: 'inherit', opacity: 0.8, cursor: 'not-allowed' }}>
                       {cardContent}
                     </div>
                   );
