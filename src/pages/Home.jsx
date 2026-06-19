@@ -82,13 +82,13 @@ const Home = () => {
       </section>
 
       {/* Featured Masterpieces */}
-      <section className="featured" style={{ padding: 'clamp(2rem, 6vw, 4rem) clamp(1.2rem, 6vw, 4rem) clamp(4rem, 10vw, 10rem)' }}>
+      <section className="featured" style={{ padding: 'clamp(2rem, 6vw, 4rem) clamp(1.2rem, 6vw, 4rem) clamp(2rem, 6vw, 4rem)' }}>
         <div className="responsive-row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4rem', gap: '1.5rem' }}>
           <div>
             <h2 style={{ fontSize: 'clamp(1.9rem, 5vw, 3.2rem)', fontWeight: 900, letterSpacing: '-1.5px' }}>Curated <span style={{ color: 'var(--primary)' }}>Masterpieces</span></h2>
             <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.1rem', marginTop: '0.5rem' }}>Rare experiences happening in our ecosystem right now.</p>
           </div>
-          <button className="glass" style={{ color: 'var(--on-surface)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.7rem', padding: '1rem 2rem', borderRadius: '14px', fontSize: '0.9rem', alignSelf: 'flex-start' }}>
+          <button className="glass" style={{ color: 'var(--on-surface)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.7rem', padding: '0.8rem 1.6rem', borderRadius: '12px', fontSize: '0.9rem', alignSelf: 'flex-start' }}>
             VIEW REPOSITORY <ArrowRight size={18} />
           </button>
         </div>
@@ -143,7 +143,7 @@ const Home = () => {
                             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Starting At</span>
                             <span style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--on-surface)' }}>{event.is_paid ? `$${event.price}` : 'VIP'}</span>
                           </div>
-                          <button className="btn-primary" style={{ padding: '0.7rem 1.4rem', borderRadius: '12px', fontWeight: 800, fontSize: '0.85rem', opacity: isClickable ? 1 : 0.5 }}>{isClickable ? 'OBTAIN ACCESS' : regStatus.toUpperCase()}</button>
+                          <button className="btn-primary" style={{ padding: '0.8rem 1.6rem', borderRadius: '12px', fontWeight: 800, fontSize: '0.85rem', opacity: isClickable ? 1 : 0.5 }}>{isClickable ? 'OBTAIN ACCESS' : regStatus.toUpperCase()}</button>
                         </div>
                       </div>
                     </>

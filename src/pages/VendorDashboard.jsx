@@ -452,7 +452,7 @@ const VendorDashboard = () => {
               <input placeholder="Event Name" value={newEvent.name} onChange={e => setNewEvent({...newEvent, name: e.target.value})} required style={styles.input} />
               <input placeholder="Description" value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} style={styles.input} />
               <textarea placeholder="Details" value={newEvent.details} onChange={e => setNewEvent({...newEvent, details: e.target.value})} style={{...styles.input, minHeight: '100px'}} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div className="responsive-2col" style={{ gap: '15px' }}>
                 <input placeholder="Location (Venue)" value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} style={styles.input} />
                 <input placeholder="State" value={newEvent.state} onChange={e => setNewEvent({...newEvent, state: e.target.value})} style={styles.input} />
               </div>
@@ -665,10 +665,10 @@ const VendorDashboard = () => {
 }
 
 const styles = {
-  container: { padding: '40px', maxWidth: '1200px', margin: '0 auto', color: 'var(--on-surface)' },
+  container: { padding: 'clamp(1.5rem, 5vw, 2.5rem)', maxWidth: '1200px', margin: '0 auto', color: 'var(--on-surface)' },
   center: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' },
   title: { fontSize: '2.5rem', marginBottom: '30px' },
-  tabs: { display: 'flex', gap: '15px', marginBottom: '30px' },
+  tabs: { display: 'flex', gap: '15px', marginBottom: '30px', flexWrap: 'wrap' },
   tabBtn: { padding: '12px 24px', borderRadius: '12px', fontSize: '1rem', fontWeight: 600, cursor: 'pointer', border: 'none' },
   section: { display: 'flex', flexDirection: 'column', gap: '30px' },
   card: { padding: '30px', borderRadius: '24px' },

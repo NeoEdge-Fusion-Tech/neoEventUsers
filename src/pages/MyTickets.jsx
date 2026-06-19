@@ -55,7 +55,7 @@ const MyTickets = () => {
           <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', marginBottom: '0.5rem', fontWeight: 900, letterSpacing: '-1.5px', marginTop: '0.5rem' }}>My <span style={{ color: 'var(--primary)' }}>Tickets</span></h1>
           <p style={{ color: 'var(--on-surface-variant)', fontSize: 'clamp(0.95rem, 2vw, 1.1rem)', fontWeight: 500 }}>Manage your events and access credentials.</p>
         </div>
-        <div className="glass" style={{ padding: '1rem 2.5rem', borderRadius: '20px', textAlign: 'center', border: '1px solid var(--primary)', alignSelf: 'flex-start' }}>
+        <div className="glass" style={{ padding: '0.8rem 1.6rem', borderRadius: '20px', textAlign: 'center', border: '1px solid var(--primary)', alignSelf: 'flex-start' }}>
           <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800, letterSpacing: '1.5px' }}>PHOTOS OF ME</div>
           <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--on-surface)' }}>{photoCount}</div>
         </div>

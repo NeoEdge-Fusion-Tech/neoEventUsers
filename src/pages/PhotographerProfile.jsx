@@ -38,8 +38,8 @@ const PhotographerProfile = () => {
         <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(to top, var(--surface), transparent)' }}></div>
       </div>
 
-      <div style={{ maxWidth: '1400px', margin: '-100px auto 0', padding: '0 4rem', position: 'relative', zIndex: 10 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '5rem' }}>
+      <div style={{ maxWidth: '1400px', margin: '-100px auto 0', padding: '0 clamp(1rem, 5vw, 4rem)', position: 'relative', zIndex: 10 }}>
+        <div className="responsive-dashboard-grid-left" style={{ gap: '5rem' }}>
           {/* Sidebar / Info */}
           <aside>
             <div className="glass" style={{ padding: '3rem', borderRadius: '40px', textAlign: 'center', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-kinetic)' }}>

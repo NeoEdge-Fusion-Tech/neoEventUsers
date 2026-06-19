@@ -251,7 +251,7 @@ const NeoAdminDashboard = () => {
             <div style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)' }}>{g.owner.email} · {g.events.length} Event(s)</div>
           </div>
         </div>
-        <div className="glass" style={{ borderRadius: '0 0 12px 12px', overflow: 'hidden' }}>
+        <div className="glass" style={{ borderRadius: '0 0 12px 12px', overflow: 'hidden', overflowX: 'auto' }}>
           {renderEventTableRows(g.events)}
         </div>
       </div>
@@ -259,7 +259,7 @@ const NeoAdminDashboard = () => {
   };
 
   const renderEventTableRows = (eventsList) => (
-    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
       <thead>
         <tr style={{ background: 'rgba(0,0,0,0.2)' }}>
           {['Event', 'Status', 'Photos', 'AI Progress', 'Date', ''].map(h => (
@@ -307,9 +307,9 @@ const NeoAdminDashboard = () => {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)', color: 'var(--on-surface)', fontFamily: 'var(--font-body, Inter, sans-serif)' }}>
 
-      {/* ── Sidebar ── */}
-      <div style={{ display: 'flex', minHeight: '100vh' }}>
-        <aside style={{ width: '260px', minHeight: '100vh', background: 'rgba(8,12,20,0.95)', borderRight: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem', gap: '0.5rem', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 100 }}>
+      {/* ── Sidebar & Main Layout ── */}
+      <div className="admin-layout">
+        <aside className="admin-sidebar">
           {/* Logo */}
           <div style={{ marginBottom: '2.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.3rem' }}>
@@ -351,7 +351,7 @@ const NeoAdminDashboard = () => {
         </aside>
 
         {/* ── Main content area ── */}
-        <main style={{ marginLeft: '260px', flex: 1, padding: '3rem', maxWidth: 'calc(100vw - 260px)', overflowX: 'hidden' }}>
+        <main className="admin-main">
 
           {/* ── OVERVIEW ── */}
           {activeSection === 'overview' && (
@@ -378,10 +378,10 @@ const NeoAdminDashboard = () => {
                   </div>
 
                   {/* Event + Photo stats */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
+                  <div className="responsive-2col" style={{ gap: '3rem' }}>
                     <div>
                       <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.5rem' }}>Events</h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                      <div className="responsive-2col" style={{ gap: '1.5rem' }}>
                         <StatCard icon={Database} label="Total Events" value={stats.events.total} />
                         <StatCard icon={Activity} label="Published" value={stats.events.published ?? stats.events.active} color="#22c55e" />
                         {stats.events.active !== undefined && (
@@ -493,8 +493,8 @@ const NeoAdminDashboard = () => {
               ) : eventGroupByOwner ? (
                 renderGroupedEvents()
               ) : (
-                <div className="glass" style={{ borderRadius: '24px', overflow: 'hidden' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div className="glass" style={{ borderRadius: '24px', overflow: 'hidden', overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
                     <thead>
                       <tr style={{ background: 'rgba(0,0,0,0.2)' }}>
                         {['Event', 'Owner', 'Status', 'Photos', 'AI Progress', 'Date', ''].map(h => (
@@ -583,7 +583,7 @@ const NeoAdminDashboard = () => {
               ) : eventDetail ? (
                 <>
                   {/* AI Stats */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                  <div className="responsive-4col" style={{ gap: '1.5rem', marginBottom: '1.5rem' }}>
                     {Object.entries(eventDetail.ai_stats).map(([status, count]) => {
                       const c = aiColors[status] || { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' };
                       return (
@@ -601,7 +601,7 @@ const NeoAdminDashboard = () => {
                       <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Cpu size={18} color="var(--primary)" /> Deep AI Analytics
                       </h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
+                      <div className="responsive-3col" style={{ gap: '2rem' }}>
                         <div>
                           <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', fontWeight: 700, marginBottom: '0.3rem' }}>Total Faces Detected</div>
                           <div style={{ fontSize: '1.8rem', fontWeight: 900 }}>{eventDetail.ai_analytics.total_faces_detected}</div>
@@ -756,8 +756,8 @@ const NeoAdminDashboard = () => {
               {usersLoading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '6rem' }}><Loader2 className="animate-spin" size={36} color="var(--primary)" /></div>
               ) : (
-                <div className="glass" style={{ borderRadius: '24px', overflow: 'hidden' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div className="glass" style={{ borderRadius: '24px', overflow: 'hidden', overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
                     <thead>
                       <tr style={{ background: 'rgba(0,0,0,0.2)' }}>
                         {['User', 'Email', 'Role', 'Status', 'Phone', 'Joined'].map(h => (
@@ -807,7 +807,7 @@ const NeoAdminDashboard = () => {
             <button onClick={() => setEditingUserId(null)} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer' }}><X size={24} /></button>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '2rem' }}>Edit User</h2>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div className="responsive-2col" style={{ gap: '1.5rem', marginBottom: '2rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>First Name</label>
                 <input value={editingUserData.first_name || ''} onChange={e => handleUserChange('first_name', e.target.value)} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
@@ -837,7 +837,7 @@ const NeoAdminDashboard = () => {
             {editingUserData.role === 'VENDOR' && (
               <>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--glass-border)' }}>Vendor Profile</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                <div className="responsive-2col" style={{ gap: '1.5rem', marginBottom: '2rem' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Subtype</label>
                     <input value={editingUserData.vendor_profile?.subtype || ''} onChange={e => handleUserChange('subtype', e.target.value, 'vendor_profile')} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />
@@ -857,7 +857,7 @@ const NeoAdminDashboard = () => {
                 </div>
 
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--glass-border)' }}>Business Details</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                <div className="responsive-2col" style={{ gap: '1.5rem', marginBottom: '2rem' }}>
                   <div style={{ gridColumn: 'span 2' }}>
                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--on-surface-variant)' }}>Business Name</label>
                     <input value={editingUserData.vendor_business?.business_name || ''} onChange={e => handleUserChange('business_name', e.target.value, 'vendor_business')} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)' }} />

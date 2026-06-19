@@ -194,12 +194,12 @@ const PublicVendorProfile = () => {
 
       <div style={styles.contentWrapper}>
         {/* Header Card */}
-        <div className="glass" style={styles.headerCard}>
-          <div style={styles.headerInfo}>
-            <div style={styles.avatarBox}>
+        <div className="glass responsive-row" style={styles.headerCard}>
+          <div className="vendor-header-info">
+            <div className="vendor-avatar">
               <Disc size={60} color="var(--primary)" />
             </div>
-            <div style={styles.headerDetails}>
+            <div className="vendor-details">
               <h1 style={styles.businessName}>{profile.business_name}</h1>
               <div style={styles.contactRow}>
                 {profile.city && profile.country && <span style={styles.contactItem}><MapPin size={16}/> {profile.city}, {profile.country}</span>}
@@ -274,12 +274,12 @@ const styles = {
   center: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' },
   heroBackground: { height: '350px', background: 'var(--primary-container)', position: 'relative', overflow: 'hidden' },
   heroOverlay: { position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 150%, var(--primary), transparent)', opacity: 0.15 },
-  contentWrapper: { maxWidth: '1200px', margin: '-120px auto 0', padding: '0 2rem', position: 'relative', zIndex: 10, paddingBottom: '4rem' },
-  headerCard: { padding: '3rem', borderRadius: '32px', marginBottom: '4rem', display: 'flex', border: '1px solid var(--glass-border)', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' },
+  contentWrapper: { maxWidth: '1200px', margin: '-120px auto 0', padding: '0 clamp(1rem, 5vw, 2rem)', position: 'relative', zIndex: 10, paddingBottom: '4rem' },
+  headerCard: { padding: 'clamp(1.5rem, 5vw, 3rem)', borderRadius: '32px', marginBottom: '4rem', display: 'flex', border: '1px solid var(--glass-border)', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' },
   headerInfo: { display: 'flex', alignItems: 'center', gap: '2.5rem', flexWrap: 'wrap', width: '100%' },
   avatarBox: { width: '140px', height: '140px', borderRadius: '40px', backgroundColor: 'var(--surface-highest)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '4px solid var(--primary)' },
   headerDetails: { flex: 1 },
-  businessName: { fontSize: '3rem', fontWeight: 900, marginBottom: '0.5rem', letterSpacing: '-1px' },
+  businessName: { fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 900, marginBottom: '0.5rem', letterSpacing: '-1px' },
   contactRow: { display: 'flex', gap: '1.5rem', flexWrap: 'wrap', color: 'var(--on-surface-variant)', marginBottom: '1.5rem' },
   contactItem: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', fontWeight: 500 },
   registeredBadge: { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', borderRadius: '24px', fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' },
@@ -294,7 +294,7 @@ const styles = {
   breadcrumbActive: { color: 'var(--primary)', fontWeight: 800 },
   
   // Grid & Cards
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' },
   card: { padding: '30px', borderRadius: '24px', border: '1px solid var(--glass-border)', position: 'relative' },
   cardIconBox: { width: '60px', height: '60px', borderRadius: '16px', background: 'rgba(255, 177, 115, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' },
   cardTitle: { fontSize: '1.5rem', fontWeight: 800, marginBottom: '10px' },
@@ -322,7 +322,7 @@ const styles = {
   
   // Lightbox
   lightboxOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' },
-  closeBtn: { position: 'absolute', top: '30px', right: '40px', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', opacity: 0.7, transition: 'opacity 0.2s' },
+  closeBtn: { position: 'absolute', top: '20px', right: '20px', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', opacity: 0.7, transition: 'opacity 0.2s' },
   lightboxContent: { maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', alignItems: 'center' },
   lightboxImage: { maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' },
   lightboxCaption: { color: '#fff', marginTop: '20px', fontSize: '1.2rem', fontWeight: 500 }

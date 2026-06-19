@@ -44,12 +44,12 @@ const PhotographerDashboard = () => {
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '10rem' }}><Loader2 className="animate-spin" size={48} color="var(--primary)" /></div>;
 
   return (
-    <div className="photographer-dashboard" style={{ padding: '4rem 6rem', maxWidth: '1400px', margin: '0 auto' }}>
-      <header style={{ marginBottom: '5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <div className="photographer-dashboard responsive-page-pad" style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <header className="responsive-row" style={{ marginBottom: '3rem', justifyContent: 'space-between', alignItems: 'flex-end', gap: '2rem' }}>
         <div>
           <span style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '4px' }}>Vendor Portal</span>
-          <h1 style={{ fontSize: '4rem', fontWeight: 900, letterSpacing: '-2px', marginTop: '0.5rem' }}>Active <span style={{ color: 'var(--primary)' }}>Assignments</span></h1>
-          <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.2rem', marginTop: '0.5rem' }}>Manage your captures and distribution status across global events.</p>
+          <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, letterSpacing: '-1.5px', marginTop: '0.5rem' }}>Active <span style={{ color: 'var(--primary)' }}>Assignments</span></h1>
+          <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.1rem', marginTop: '0.5rem' }}>Manage your captures and distribution status across global events.</p>
         </div>
         
         <div className="glass" style={{ display: 'flex', padding: '0.4rem', borderRadius: '50px' }}>
@@ -58,14 +58,15 @@ const PhotographerDashboard = () => {
               key={f}
               onClick={() => setFilter(f)}
               style={{ 
-                padding: '0.8rem 1.8rem', 
+                padding: '0.6rem 1.4rem', 
                 borderRadius: '50px', 
                 border: 'none', 
                 background: filter === f ? 'var(--primary)' : 'transparent',
                 color: filter === f ? '#fff' : 'var(--on-surface-variant)',
                 fontWeight: 700,
                 cursor: 'pointer',
-                textTransform: 'capitalize'
+                textTransform: 'capitalize',
+                fontSize: '0.9rem'
               }}
             >
               {f}
@@ -81,10 +82,10 @@ const PhotographerDashboard = () => {
           <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.1rem' }}>When organizers invite you to events, they will appear here.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '2.5rem' }}>
+        <div className="responsive-event-grid">
           {filteredSessions.map(session => (
-            <div key={session.id} className="glass card-hover" style={{ borderRadius: '32px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
-              <div style={{ height: '240px', position: 'relative' }}>
+            <div key={session.id} className="glass hover-card" style={{ borderRadius: '20px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+              <div style={{ height: '200px', position: 'relative' }}>
                 <img src={session.banner_image || '/placeholder.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }}>
                    {session.is_pending ? (
@@ -99,30 +100,30 @@ const PhotographerDashboard = () => {
                 </div>
               </div>
               
-              <div style={{ padding: '2.5rem' }}>
+              <div style={{ padding: '1.5rem' }}>
                 <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '0.8rem' }}>Event Assignment</div>
-                <h3 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '1.5rem' }}>{session.title}</h3>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '1rem' }}>{session.title}</h3>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', color: 'var(--on-surface-variant)', fontSize: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', color: 'var(--on-surface-variant)', fontSize: '0.9rem' }}>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                     <Clock size={18} color="var(--primary)" /> {formatDateRange(session.start_date, session.end_date)}
+                     <Clock size={16} color="var(--primary)" /> {formatDateRange(session.start_date, session.end_date)}
                    </div>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                     <CheckCircle size={18} color={session.is_pending ? 'var(--on-surface-variant)' : 'var(--primary)'} />
+                     <CheckCircle size={16} color={session.is_pending ? 'var(--on-surface-variant)' : 'var(--primary)'} />
                      {session.is_pending ? 'Waiting for first capture sync' : 'Highlights delivered to attendees'}
                    </div>
                 </div>
 
-                <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem' }}>
+                <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
                   <Link 
                     to={`/upload/${session.id}`} 
                     className="btn-primary" 
-                    style={{ flex: 1, textDecoration: 'none', textAlign: 'center', padding: '1.2rem', borderRadius: '16px', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.8rem' }}
+                    style={{ flex: 1, textDecoration: 'none', textAlign: 'center', padding: '0.8rem 1.6rem', borderRadius: '12px', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.8rem', fontSize: '0.95rem' }}
                   >
-                    <Camera size={20} /> START UPLOAD
+                    <Camera size={18} /> START UPLOAD
                   </Link>
-                  <button className="glass" style={{ width: '60px', borderRadius: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--on-surface-variant)' }}>
-                    <ExternalLink size={20} />
+                  <button className="glass" style={{ width: '48px', height: '48px', borderRadius: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--on-surface-variant)' }}>
+                    <ExternalLink size={18} />
                   </button>
                 </div>
               </div>
