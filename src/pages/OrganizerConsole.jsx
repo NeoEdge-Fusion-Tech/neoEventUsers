@@ -47,39 +47,39 @@ const OrganizerConsole = () => {
           <Link to="/events/create" className="btn-primary" style={{ padding: '1.2rem 3rem', borderRadius: '16px', textDecoration: 'none', fontWeight: 900 }}>LAUNCH FIRST EVENT</Link>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(450px, 1fr))', gap: '3rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2rem', justifyItems: 'center' }}>
           {events.map(event => (
-            <div key={event.id} className="glass card-hover" style={{ borderRadius: '36px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
-              <div style={{ height: '280px', position: 'relative' }}>
+            <div key={event.id} className="glass card-hover" style={{ borderRadius: '24px', overflow: 'hidden', border: '1px solid var(--glass-border)', maxWidth: '420px', width: '100%', display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div style={{ height: '200px', position: 'relative' }}>
                 <img src={event.banner_image || '/placeholder.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(13, 20, 32, 0.9), transparent)' }}></div>
-                <div style={{ position: 'absolute', bottom: '2rem', left: '2.5rem' }}>
-                   <div style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '0.5rem' }}>Status: {event.status}</div>
-                   <h3 style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff' }}>{event.title}</h3>
+                <div style={{ position: 'absolute', bottom: '1rem', left: '1.5rem' }}>
+                   <div style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '0.3rem' }}>Status: {event.status}</div>
+                   <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#fff' }}>{event.title}</h3>
                 </div>
               </div>
               
-              <div style={{ padding: '3rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '3rem' }}>
+              <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
                    <div>
-                     <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', fontWeight: 800, marginBottom: '0.5rem', textTransform: 'uppercase' }}>Schedule</div>
-                     <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.6rem' }}><Calendar size={16} color="var(--primary)" /> {formatDateRange(event.start_date, event.end_date)}</div>
+                     <div style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)', fontWeight: 800, marginBottom: '0.4rem', textTransform: 'uppercase' }}>Schedule</div>
+                     <div style={{ fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Calendar size={14} color="var(--primary)" /> {formatDateRange(event.start_date, event.end_date)}</div>
                    </div>
                    <div>
-                     <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', fontWeight: 800, marginBottom: '0.5rem', textTransform: 'uppercase' }}>Vendors</div>
-                     <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.6rem' }}><Camera size={16} color="var(--primary)" /> {event.event_photographers?.length || 0} Assigned</div>
+                     <div style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)', fontWeight: 800, marginBottom: '0.4rem', textTransform: 'uppercase' }}>Vendors</div>
+                     <div style={{ fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Camera size={14} color="var(--primary)" /> {event.event_photographers?.length || 0} Assigned</div>
                    </div>
                 </div>
-
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button onClick={() => navigate(`/organizer/event/${event.id}`)} className="btn-primary" style={{ flex: 2, padding: '1.2rem', borderRadius: '16px', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.8rem' }}>
-                    <Settings size={18} /> MANAGE EVENT
+ 
+                <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto' }}>
+                  <button onClick={() => navigate(`/organizer/event/${event.id}`)} className="btn-primary" style={{ flex: 2, padding: '0.8rem', borderRadius: '12px', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', fontSize: '0.9rem' }}>
+                    <Settings size={16} /> MANAGE
                   </button>
-                  <button className="glass" style={{ flex: 1, borderRadius: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--on-surface-variant)', border: '1px solid var(--glass-border)' }}>
-                    <Users size={18} />
+                  <button className="glass" style={{ flex: 1, borderRadius: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--on-surface-variant)', border: '1px solid var(--glass-border)' }}>
+                    <Users size={16} />
                   </button>
-                  <button className="glass" style={{ flex: 1, borderRadius: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
-                    <Trash2 size={18} />
+                  <button className="glass" style={{ flex: 1, borderRadius: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>

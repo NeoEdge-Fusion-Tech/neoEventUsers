@@ -179,6 +179,11 @@ img, video {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 2rem;
 }
+.responsive-event-grid > * {
+  width: 100%;
+  max-width: 420px;
+  justify-self: center;
+}
 @media (max-width: 640px) {
   .responsive-event-grid {
     grid-template-columns: 1fr !important;

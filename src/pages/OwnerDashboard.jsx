@@ -531,7 +531,7 @@ const OwnerDashboard = () => {
             </div>
             
             <div style={styles.itemContent}>
-              <h3 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '0.8rem' }}>{ev.title}</h3>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '0.8rem' }}>{ev.title}</h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem', fontSize: '0.9rem', color: 'var(--on-surface-variant)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -646,12 +646,12 @@ const styles = {
   header: { justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4rem', gap: '1.5rem' },
   title: { fontSize: '2.5rem' },
   addBtn: { display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', borderRadius: '12px', fontSize: '0.95rem', fontWeight: 800, cursor: 'pointer', border: 'none' },
-  list: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(400px, 100%), 1fr))', gap: '3rem' },
-  listItem: { borderRadius: '32px', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' },
-  imageWrapper: { height: '240px', width: '100%', position: 'relative' },
+  list: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2rem', justifyItems: 'center' },
+  listItem: { borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', maxWidth: '420px', width: '100%', border: '1px solid var(--glass-border)' },
+  imageWrapper: { height: '200px', width: '100%', position: 'relative' },
   bannerImg: { width: '100%', height: '100%', objectFit: 'cover' },
-  dayBadge: { position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'var(--primary)', color: 'var(--on-primary)', padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 900, letterSpacing: '1px' },
-  itemContent: { padding: '2.5rem', display: 'flex', flexDirection: 'column', flex: 1 },
+  dayBadge: { position: 'absolute', top: '1rem', right: '1rem', background: 'var(--primary)', color: 'var(--on-primary)', padding: '0.4rem 0.8rem', borderRadius: '50px', fontSize: '0.7rem', fontWeight: 900, letterSpacing: '1px' },
+  itemContent: { padding: '1.5rem', display: 'flex', flexDirection: 'column', flex: 1 },
   actionBtn: { flex: 1, padding: '12px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', border: 'none', textAlign: 'center' },
   modalOverlay: { position: 'fixed', inset: 0, zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)', display: 'flex', justifyContent: 'center', alignItems: 'center', overflowY: 'auto', padding: 'clamp(1rem, 4vw, 2rem) 0' },
   modalContent: { width: '90%', maxWidth: '1350px', borderRadius: '40px', padding: 'clamp(1.5rem, 5vw, 3.5rem)', overflowY: 'auto', maxHeight: '90vh' },
