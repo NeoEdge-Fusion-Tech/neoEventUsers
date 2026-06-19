@@ -9,6 +9,7 @@ import {
 import api from '../api/axios';
 import { eventService } from '../api/event';
 import { vendorService } from '../api/vendor';
+import { uploadEventBannerAssets } from '../utils/eventAssetUpload';
 
 const getCurrencySymbol = (code) => {
   switch (code) {
@@ -200,22 +201,25 @@ const OrganizerEventDetails = () => {
     e.preventDefault();
     setSaving(true); setSaveMsg(''); setSaveError('');
     try {
-      const formData = new FormData();
+      // Upload any new banner assets directly to storage first (bypasses our
+      // API's body-size limit on serverless hosting) — only the resulting
+      // URLs travel in the update request below.
+      const bannerUrls = await uploadEventBannerAssets({
+        banner_image: editForm.banner_image_file,
+        banner_portrait: editForm.banner_portrait_file,
+        banner_video: editForm.banner_video_file,
+      });
+
+      const payload = {};
       Object.entries(editForm).forEach(([k, v]) => {
         if (!['banner_image_file', 'banner_portrait_file', 'banner_video_file'].includes(k)) {
-          formData.append(k, v);
+          payload[k] = v;
         }
       });
-      if (editForm.banner_image_file) formData.append('banner_image', editForm.banner_image_file);
-      if (editForm.banner_portrait_file) formData.append('banner_portrait', editForm.banner_portrait_file);
-      if (editForm.banner_video_file) formData.append('banner_video', editForm.banner_video_file);
+      Object.assign(payload, bannerUrls);
 
-      formData.append('ticket_types', JSON.stringify(
-        editTickets.map(({ _dirty, _new, ...t }) => t)
-      ));
-      await api.patch(`/events/${eventId}/update/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      payload.ticket_types = editTickets.map(({ _dirty, _new, ...t }) => t);
+      await api.patch(`/events/${eventId}/update/`, payload);
       setSaveMsg('Event updated successfully!');
       fetchEventData();
     } catch (err) {

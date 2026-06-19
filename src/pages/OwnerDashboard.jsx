@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { getNames } from 'country-list';
 import { eventService } from '../api/event';
 import { vendorService } from '../api/vendor';
+import { uploadEventBannerAssets } from '../utils/eventAssetUpload';
 import { 
   Loader2, Plus, Users, Trash2, Calendar, MapPin, Ticket, 
   Image as ImageIcon, Video, Clock, Eye, ShieldCheck, Info, X 
@@ -154,25 +155,29 @@ const OwnerDashboard = () => {
     });
 
     try {
-      // Use FormData to allow backend to upload files directly
-      const formData = new FormData();
+      // Upload banner assets directly to storage first (bypasses our API's
+      // body-size limit on serverless hosting) — only the resulting URLs
+      // travel in the create request below.
+      const bannerUrls = await uploadEventBannerAssets({
+        banner_image: bannerImage,
+        banner_portrait: bannerPortrait,
+        banner_video: bannerVideo,
+      });
+
+      const payload = {};
       Object.entries(newEvent).forEach(([k, v]) => {
         if (v !== null && v !== undefined && k !== 'ticket_types' && k !== 'vendors' && !k.endsWith('_file')) {
-          formData.append(k, v);
+          payload[k] = v;
         }
       });
-      formData.append('status', 'PUBLISHED');
-
-      formData.append('ticket_types', JSON.stringify(ticketTypes));
+      payload.status = 'PUBLISHED';
+      payload.ticket_types = ticketTypes;
       if (finalVendors.length > 0) {
-        formData.append('vendors', JSON.stringify(finalVendors));
+        payload.vendors = finalVendors;
       }
+      Object.assign(payload, bannerUrls);
 
-      if (bannerImage) formData.append('banner_image', bannerImage);
-      if (bannerPortrait) formData.append('banner_portrait', bannerPortrait);
-      if (bannerVideo) formData.append('banner_video', bannerVideo);
-
-      await eventService.createEvent(formData);
+      await eventService.createEvent(payload);
       setShowCreate(false);
       
       // Reset State
