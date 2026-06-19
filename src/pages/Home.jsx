@@ -115,46 +115,46 @@ const Home = () => {
 
                   const cardContent = (
                     <>
-                      <div style={{ height: '170px', background: 'var(--surface-highest)', position: 'relative' }}>
+                      <div style={{ height: '120px', background: 'var(--surface-highest)', position: 'relative' }}>
                         <img src={event.banner_image || '/placeholder.jpg'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <div style={{ position: 'absolute', top: '1rem', left: '1rem', display: 'flex', gap: '0.5rem' }}>
+                        <div style={{ position: 'absolute', top: '0.6rem', left: '0.6rem', display: 'flex', gap: '0.4rem' }}>
                           {event.is_currently_holding && (
-                            <div className="glass" style={{ padding: '0.4rem 0.8rem', borderRadius: '50px', fontSize: '0.7rem', fontWeight: 900, color: 'var(--primary)', border: '1px solid var(--primary)', background: 'var(--glass-bg)' }}>
+                            <div className="glass" style={{ padding: '0.2rem 0.5rem', borderRadius: '50px', fontSize: '0.6rem', fontWeight: 900, color: 'var(--primary)', border: '1px solid var(--primary)', background: 'var(--glass-bg)' }}>
                               LIVE
                             </div>
                           )}
-                          <div className="glass" style={{ padding: '0.4rem 0.8rem', borderRadius: '50px', fontSize: '0.7rem', fontWeight: 900, color: 'var(--on-surface)' }}>
+                          <div className="glass" style={{ padding: '0.2rem 0.5rem', borderRadius: '50px', fontSize: '0.6rem', fontWeight: 900, color: 'var(--on-surface)' }}>
                             {event.is_paid ? 'PREMIUM' : 'OPEN ACCESS'}
                           </div>
                         </div>
                       </div>
-                      <div style={{ padding: '1.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.8rem' }}>
-                          <Play size={12} fill="var(--primary)" color="var(--primary)" />
-                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{regStatus}</span>
+                      <div style={{ padding: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.4rem' }}>
+                          <Play size={10} fill="var(--primary)" color="var(--primary)" />
+                          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{regStatus}</span>
                         </div>
-                        <h3 style={{ fontSize: '1.35rem', marginBottom: '0.8rem', fontWeight: 900, lineHeight: '1.25', letterSpacing: '-0.3px' }}>{event.title}</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', color: 'var(--on-surface-variant)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}><Calendar size={16} color="var(--primary)" /> {formatDateRange(event.start_date, event.end_date)}</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}><MapPin size={16} color="var(--primary)" /> {event.venue_name || event.location || 'Online / TBA'}</div>
+                        <h3 style={{ fontSize: '1.1rem', marginBottom: '0.4rem', fontWeight: 900, lineHeight: '1.25', letterSpacing: '-0.2px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '2.5em' }}>{event.title}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', color: 'var(--on-surface-variant)', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Calendar size={14} color="var(--primary)" /> {formatDateRange(event.start_date, event.end_date)}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><MapPin size={14} color="var(--primary)" /> {event.venue_name || event.location || 'Online / TBA'}</div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '0.75rem' }}>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Starting At</span>
-                            <span style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--on-surface)' }}>{event.is_paid ? `$${event.price}` : 'VIP'}</span>
+                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Starting At</span>
+                            <span style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--on-surface)' }}>{event.is_paid ? `$${event.price}` : 'VIP'}</span>
                           </div>
-                          <button className="btn-primary" style={{ padding: '0.8rem 1.6rem', borderRadius: '12px', fontWeight: 800, fontSize: '0.85rem', opacity: isClickable ? 1 : 0.5 }}>{isClickable ? 'OBTAIN ACCESS' : regStatus.toUpperCase()}</button>
+                          <button className="btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '10px', fontWeight: 800, fontSize: '0.75rem', opacity: isClickable ? 1 : 0.5 }}>{isClickable ? 'OBTAIN ACCESS' : regStatus.toUpperCase()}</button>
                         </div>
                       </div>
                     </>
                   );
-
+ 
                   return isClickable ? (
-                    <Link to={`/register/${event.id}`} key={event.id} className="event-card glass hover-card" style={{ borderRadius: '24px', overflow: 'hidden', textDecoration: 'none', color: 'inherit' }}>
+                    <Link to={`/register/${event.id}`} key={event.id} className="event-card glass hover-card" style={{ borderRadius: '16px', overflow: 'hidden', textDecoration: 'none', color: 'inherit' }}>
                       {cardContent}
                     </Link>
                   ) : (
-                    <div key={event.id} className="event-card glass" style={{ borderRadius: '24px', overflow: 'hidden', color: 'inherit', opacity: 0.8, cursor: 'not-allowed' }}>
+                    <div key={event.id} className="event-card glass" style={{ borderRadius: '16px', overflow: 'hidden', color: 'inherit', opacity: 0.8, cursor: 'not-allowed' }}>
                       {cardContent}
                     </div>
                   );
