@@ -167,6 +167,18 @@ const OrganizerEventDetails = () => {
     }
   };
 
+  const togglePublicGallery = async () => {
+    try {
+      const newValue = !event.is_public_gallery_enabled;
+      await api.patch(`/events/${eventId}/update/`, { is_public_gallery_enabled: newValue });
+      setEvent(prev => ({ ...prev, is_public_gallery_enabled: newValue }));
+      setActionMsg(`✅ Public gallery is now ${newValue ? 'ENABLED' : 'DISABLED'}`);
+    } catch (err) {
+      console.error(err);
+      setActionMsg('❌ Failed to toggle public gallery.');
+    }
+  };
+
   const initEditForm = (ev) => {
     setEditForm({
       title: ev.title || '',
@@ -949,6 +961,45 @@ const OrganizerEventDetails = () => {
                     {uploadingPhotos ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                     Upload Photos
                   </button>
+                  <div 
+                    onClick={togglePublicGallery}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.6rem',
+                      cursor: 'pointer',
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '50px',
+                      background: 'var(--surface-highest)',
+                      border: '1px solid var(--glass-border)'
+                    }}
+                  >
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)' }}>Public Gallery</span>
+                    <div 
+                      style={{
+                        width: '40px',
+                        height: '22px',
+                        borderRadius: '20px',
+                        background: event?.is_public_gallery_enabled ? '#22c55e' : 'var(--glass-border)',
+                        position: 'relative',
+                        transition: 'background 0.3s ease'
+                      }}
+                    >
+                      <div 
+                        style={{
+                          width: '18px',
+                          height: '18px',
+                          borderRadius: '50%',
+                          background: 'white',
+                          position: 'absolute',
+                          top: '2px',
+                          left: event?.is_public_gallery_enabled ? '20px' : '2px',
+                          transition: 'left 0.3s ease',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
               

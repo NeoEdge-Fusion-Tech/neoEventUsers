@@ -72,6 +72,19 @@ const EventConsole = () => {
     }
   };
 
+  const handleDownloadTicket = () => {
+    if (registration?.qr_code) {
+      const link = document.createElement('a');
+      link.href = registration.qr_code;
+      link.setAttribute('download', `neo_event_pass_${registration.registration_code}.png`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } else {
+      alert("No QR Code generated yet for this pass.");
+    }
+  };
+
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '10rem' }}><Loader2 className="animate-spin" size={48} color="var(--primary)" /></div>;
   if (!registration) return <div style={{ textAlign: 'center', padding: '10rem' }}>Registration details not found.</div>;
 
@@ -186,7 +199,7 @@ const EventConsole = () => {
                       <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{registration.registration_code}</div>
                     </div>
                   </div>
-                  <button className="btn-primary" style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', fontSize: '0.85rem' }}>
+                  <button onClick={handleDownloadTicket} className="btn-primary" style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', fontSize: '0.85rem' }}>
                     <Download size={16} /> Download Passport
                   </button>
                 </div>
@@ -263,21 +276,23 @@ const EventConsole = () => {
                   >
                     Personalized (AI)
                   </button>
-                  <button 
-                    onClick={() => setGalleryCategory('public')}
-                    style={{ 
-                      padding: '0.5rem 1rem', 
-                      borderRadius: '50px', 
-                      border: 'none', 
-                      background: galleryCategory === 'public' ? 'var(--primary)' : 'transparent',
-                      color: galleryCategory === 'public' ? 'var(--on-primary)' : 'var(--on-surface-variant)',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      fontSize: '0.8rem'
-                    }}
-                  >
-                    Public Highlights
-                  </button>
+                  {registration.is_public_gallery_enabled && (
+                    <button 
+                      onClick={() => setGalleryCategory('public')}
+                      style={{ 
+                        padding: '0.5rem 1rem', 
+                        borderRadius: '50px', 
+                        border: 'none', 
+                        background: galleryCategory === 'public' ? 'var(--primary)' : 'transparent',
+                        color: galleryCategory === 'public' ? 'var(--on-primary)' : 'var(--on-surface-variant)',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontSize: '0.8rem'
+                      }}
+                    >
+                      Public Highlights
+                    </button>
+                  )}
                 </div>
               </div>
 
