@@ -60,6 +60,13 @@ const OrganizerEventDetails = () => {
   const [galleryLoading, setGalleryLoading] = useState(false);
   const [galleryPhotographer, setGalleryPhotographer] = useState('');
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
+  const [triggeringAI, setTriggeringAI] = useState(false);
+  const [notifyingAttendees, setNotifyingAttendees] = useState(false);
+  const [actionMsg, setActionMsg] = useState('');
+  
+  // Direct Photo Upload state
+  const fileInputRef = React.useRef(null);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   // Edit event state
   const [editForm, setEditForm] = useState(null);
@@ -97,6 +104,66 @@ const OrganizerEventDetails = () => {
       console.error('Failed to load gallery', err);
     } finally {
       setGalleryLoading(false);
+    }
+  };
+
+  const handleTriggerAI = async () => {
+    if (!window.confirm("Trigger AI processing for pending/failed photos?")) return;
+    setTriggeringAI(true);
+    setActionMsg('');
+    try {
+      const res = await api.post(`/events/${eventId}/trigger-classification/`);
+      setActionMsg(`✅ ${res.data.message || 'AI processing triggered.'}`);
+    } catch (err) {
+      setActionMsg(`❌ ${err.response?.data?.error || err.response?.data?.detail || 'Failed to trigger AI.'}`);
+    } finally {
+      setTriggeringAI(false);
+    }
+  };
+
+  const handleNotifyAttendees = async () => {
+    if (!window.confirm("Notify attendees of their mapped galleries?")) return;
+    setNotifyingAttendees(true);
+    setActionMsg('');
+    try {
+      const res = await api.post(`/photos/events/${eventId}/notify-attendees/`);
+      setActionMsg(`✅ ${res.data.status || 'Attendees notified.'}`);
+      fetchEventData(); // Refresh event to get updated attendees_notified_at
+    } catch (err) {
+      setActionMsg(`❌ ${err.response?.data?.error || err.response?.data?.detail || 'Failed to notify attendees.'}`);
+    } finally {
+      setNotifyingAttendees(false);
+    }
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    setUploadingPhotos(true);
+    setActionMsg('');
+    try {
+      let successCount = 0;
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('media_file', file);
+        formData.append('caption', file.name);
+        try {
+          await api.post(`/photos/events/${eventId}/upload/`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          successCount++;
+        } catch (err) {
+          console.error('Failed to upload file:', file.name, err);
+        }
+      }
+      setActionMsg(successCount > 0 ? `✅ Successfully uploaded ${successCount} photo(s).` : '❌ Failed to upload photos.');
+      if (successCount > 0) fetchOwnerGallery(galleryPhotographer);
+    } catch (err) {
+      setActionMsg('❌ Failed to upload photos.');
+      console.error(err);
+    } finally {
+      setUploadingPhotos(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -849,6 +916,49 @@ const OrganizerEventDetails = () => {
                   <h2 style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.5px' }}>Event Gallery</h2>
                   <span style={{ background: 'rgba(255,177,115,0.1)', color: 'var(--primary)', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 800 }}>{galleryData.total} photos</span>
                 </div>
+                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button 
+                    onClick={handleTriggerAI} 
+                    disabled={triggeringAI}
+                    style={{ padding: '0.6rem 1.2rem', borderRadius: '10px', background: 'var(--primary)', color: 'var(--on-primary)', border: 'none', fontWeight: 800, fontSize: '0.85rem', cursor: triggeringAI ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: triggeringAI ? 0.7 : 1 }}
+                  >
+                    {triggeringAI ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
+                    Retry AI
+                  </button>
+                  <button 
+                    onClick={handleNotifyAttendees} 
+                    disabled={notifyingAttendees}
+                    style={{ padding: '0.6rem 1.2rem', borderRadius: '10px', background: event?.attendees_notified_at ? 'rgba(34,197,94,0.1)' : 'var(--surface-highest)', color: event?.attendees_notified_at ? '#22c55e' : 'var(--on-surface)', border: event?.attendees_notified_at ? '1px solid #22c55e' : '1px solid var(--glass-border)', fontWeight: 800, fontSize: '0.85rem', cursor: notifyingAttendees ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: notifyingAttendees ? 0.7 : 1 }}
+                  >
+                    {notifyingAttendees ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                    {event?.attendees_notified_at ? `Notified: ${new Date(event.attendees_notified_at).toLocaleDateString()}` : 'Notify Attendees'}
+                  </button>
+                  <input 
+                    type="file" 
+                    multiple 
+                    accept="image/*" 
+                    style={{ display: 'none' }} 
+                    ref={fileInputRef} 
+                    onChange={handlePhotoUpload} 
+                  />
+                  <button 
+                    onClick={() => fileInputRef.current?.click()} 
+                    disabled={uploadingPhotos}
+                    style={{ padding: '0.6rem 1.2rem', borderRadius: '10px', background: 'var(--surface-highest)', color: 'var(--on-surface)', border: '1px solid var(--primary)', fontWeight: 800, fontSize: '0.85rem', cursor: uploadingPhotos ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: uploadingPhotos ? 0.7 : 1 }}
+                  >
+                    {uploadingPhotos ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                    Upload Photos
+                  </button>
+                </div>
+              </div>
+              
+              {actionMsg && (
+                <div style={{ padding: '1rem', borderRadius: '12px', background: actionMsg.startsWith('✅') ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: actionMsg.startsWith('✅') ? '#22c55e' : '#ef4444', fontWeight: 700, marginBottom: '2rem' }}>
+                  {actionMsg}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2rem' }}>
                 <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
                   <Filter size={16} color="var(--primary)" />
                   <select value={galleryPhotographer} onChange={e => { setGalleryPhotographer(e.target.value); fetchOwnerGallery(e.target.value); }} style={{ padding: '0.6rem 1rem', borderRadius: '10px', background: 'var(--surface-highest)', border: '1px solid var(--glass-border)', color: 'var(--on-surface)', fontWeight: 600, fontSize: '0.9rem', outline: 'none' }}>
@@ -875,12 +985,20 @@ const OrganizerEventDetails = () => {
                 <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--on-surface-variant)' }}>
                   <Camera size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
                   <p style={{ fontWeight: 600, fontSize: '1.1rem' }}>No photos uploaded yet.</p>
-                  <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>Photographers assigned to this event can upload from their dashboard.</p>
+                  <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', marginBottom: '1.5rem' }}>Photographers assigned to this event can upload from their dashboard, or you can upload directly.</p>
+                  <button 
+                    onClick={() => fileInputRef.current?.click()} 
+                    disabled={uploadingPhotos}
+                    style={{ padding: '0.8rem 1.5rem', borderRadius: '10px', background: 'var(--primary)', color: 'var(--on-primary)', border: 'none', fontWeight: 800, fontSize: '0.95rem', cursor: uploadingPhotos ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', opacity: uploadingPhotos ? 0.7 : 1 }}
+                  >
+                    {uploadingPhotos ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+                    Upload Photos
+                  </button>
                 </div>
               ) : (
                 <div style={{ columns: '3 280px', columnGap: '1.2rem' }}>
                   {galleryData.photos.map(photo => {
-                    const imgSrc = photo.media_file_url || photo.thumbnail_url || photo.media_file;
+                    const imgSrc = photo.raw_media_file_url || photo.media_file_url || photo.thumbnail_url || photo.media_file;
                     const aiColor = { PENDING: '#f59e0b', FACES_DETECTED: '#3b82f6', MAPPED_TO_USERS: '#22c55e', FAILED: '#ef4444' }[photo.ai_status] || '#94a3b8';
                     return (
                       <div key={photo.id} style={{ marginBottom: '1.2rem', breakInside: 'avoid', borderRadius: '16px', overflow: 'hidden', position: 'relative', cursor: 'pointer', border: '1px solid var(--glass-border)' }} onClick={() => setLightboxPhoto(photo)}>
@@ -1100,10 +1218,10 @@ const OrganizerEventDetails = () => {
       {lightboxPhoto && (
         <div onClick={() => setLightboxPhoto(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '2rem' }}>
           <div onClick={e => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '90vh', position: 'relative' }}>
-            {(lightboxPhoto.media_file_url || lightboxPhoto.media_file) && (<img src={lightboxPhoto.media_file_url || lightboxPhoto.media_file} alt="" style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: '16px', display: 'block' }} />)}
+            {(lightboxPhoto.raw_media_file_url || lightboxPhoto.media_file_url || lightboxPhoto.media_file) && (<img src={lightboxPhoto.raw_media_file_url || lightboxPhoto.media_file_url || lightboxPhoto.media_file} alt="" style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: '16px', display: 'block' }} />)}
             <div style={{ position: 'absolute', bottom: '-3rem', left: 0, right: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#CBD5E1' }}>
               <div><span style={{ fontWeight: 700 }}>{lightboxPhoto.uploader_full_name}</span><span style={{ opacity: 0.6, marginLeft: '0.8rem', fontSize: '0.85rem' }}>{new Date(lightboxPhoto.created_at).toLocaleDateString()}</span></div>
-              <a href={lightboxPhoto.media_file_url || lightboxPhoto.media_file} download onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}><Download size={16} /> Download</a>
+              <a href={lightboxPhoto.raw_media_file_url || lightboxPhoto.media_file_url || lightboxPhoto.media_file} download onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}><Download size={16} /> Download</a>
             </div>
             <button onClick={() => setLightboxPhoto(null)} style={{ position: 'absolute', top: '-2.5rem', right: 0, background: 'none', border: 'none', color: '#CBD5E1', cursor: 'pointer', fontSize: '1.5rem', fontWeight: 800 }}>✕</button>
           </div>

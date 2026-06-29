@@ -11,6 +11,7 @@ const EventConsole = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [galleryCategory, setGalleryCategory] = useState('personal');
+  const [selectedPhotos, setSelectedPhotos] = useState(new Set());
 
   useEffect(() => {
     const fetchConsoleData = async () => {
@@ -21,6 +22,7 @@ const EventConsole = () => {
         // Fetch photos for this event
         const photoRes = await api.get(`/photos/gallery/?event_id=${regRes.data.event_id}&category=${galleryCategory}`);
         setPhotos(photoRes.data.results || photoRes.data);
+        setSelectedPhotos(new Set()); // Clear selection when category changes
       } catch (err) {
         console.error('Failed to fetch console data', err);
       } finally {
@@ -29,6 +31,46 @@ const EventConsole = () => {
     };
     fetchConsoleData();
   }, [regId, galleryCategory]);
+
+  const togglePhotoSelection = (photoId) => {
+    setSelectedPhotos(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(photoId)) {
+        newSelection.delete(photoId);
+      } else {
+        newSelection.add(photoId);
+      }
+      return newSelection;
+    });
+  };
+
+  const handleDownloadSelected = async () => {
+    if (selectedPhotos.size === 0) return;
+    const photoIds = Array.from(selectedPhotos).join(',');
+    const downloadUrl = `/photos/events/${registration.event_id}/download-personal-zip/?photo_ids=${photoIds}`;
+    
+    try {
+      const response = await api.get(downloadUrl, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `event_photos_${registration.event_id}.zip`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (err) {
+      console.error('Failed to download zip', err);
+      alert('Failed to download selected photos.');
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedPhotos.size === photos.length) {
+      setSelectedPhotos(new Set());
+    } else {
+      setSelectedPhotos(new Set(photos.map(p => p.id)));
+    }
+  };
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '10rem' }}><Loader2 className="animate-spin" size={48} color="var(--primary)" /></div>;
   if (!registration) return <div style={{ textAlign: 'center', padding: '10rem' }}>Registration details not found.</div>;
@@ -239,6 +281,26 @@ const EventConsole = () => {
                 </div>
               </div>
 
+              {photos.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <button 
+                    onClick={handleSelectAll}
+                    style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                  >
+                    {selectedPhotos.size === photos.length ? 'Deselect All' : 'Select All'}
+                  </button>
+                  {selectedPhotos.size > 0 && (
+                    <button 
+                      onClick={handleDownloadSelected}
+                      className="btn-primary"
+                      style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                      <Download size={16} /> Download Selected ({selectedPhotos.size})
+                    </button>
+                  )}
+                </div>
+              )}
+
               {photos.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '3rem 1.5rem', background: 'var(--surface-tint)', borderRadius: '16px' }}>
                    <ImageIcon size={48} style={{ opacity: 0.15, marginBottom: '1rem', color: 'var(--on-surface)' }} />
@@ -249,8 +311,37 @@ const EventConsole = () => {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.25rem' }}>
                   {photos.map(photo => (
-                    <div key={photo.id} className="glass" style={{ borderRadius: '12px', overflow: 'hidden', height: '240px' }}>
-                      <img src={photo.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div 
+                      key={photo.id} 
+                      className="glass" 
+                      style={{ 
+                        borderRadius: '12px', 
+                        overflow: 'hidden', 
+                        height: '240px', 
+                        position: 'relative',
+                        cursor: 'pointer',
+                        border: selectedPhotos.has(photo.id) ? '3px solid var(--primary)' : '3px solid transparent'
+                      }}
+                      onClick={() => togglePhotoSelection(photo.id)}
+                    >
+                      <img src={photo.raw_media_file_url || photo.media_file_url || photo.media_file} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: '10px', 
+                        right: '10px', 
+                        width: '24px', 
+                        height: '24px', 
+                        borderRadius: '50%', 
+                        background: selectedPhotos.has(photo.id) ? 'var(--primary)' : 'rgba(0,0,0,0.3)', 
+                        border: '2px solid white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white'
+                      }}>
+                        {selectedPhotos.has(photo.id) && <span>✓</span>}
+                      </div>
                     </div>
                   ))}
                 </div>

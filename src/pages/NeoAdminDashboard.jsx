@@ -62,6 +62,7 @@ const NeoAdminDashboard = () => {
   const [eventDetailLoading, setEventDetailLoading] = useState(false);
   const [galleryPhotographer, setGalleryPhotographer] = useState('');
   const [triggeringAI, setTriggeringAI] = useState(false);
+  const [notifyingAttendees, setNotifyingAttendees] = useState(false);
   const [aiTriggerMsg, setAITriggerMsg] = useState('');
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
 
@@ -148,6 +149,22 @@ const NeoAdminDashboard = () => {
       setAITriggerMsg('❌ ' + (e.response?.data?.detail || 'Failed to trigger AI.'));
     } finally {
       setTriggeringAI(false);
+    }
+  };
+
+  /* ── notify attendees ── */
+  const notifyAttendees = async () => {
+    if (!selectedEvent) return;
+    setNotifyingAttendees(true);
+    setAITriggerMsg('');
+    try {
+      const r = await api.post(`/neo-admin/events/${selectedEvent.id}/notify-attendees/`);
+      setAITriggerMsg(`✅ ${r.data.message || 'Attendees notified.'}`);
+      openEventDetail(selectedEvent, galleryPhotographer);
+    } catch (e) {
+      setAITriggerMsg('❌ ' + (e.response?.data?.detail || 'Failed to notify attendees.'));
+    } finally {
+      setNotifyingAttendees(false);
     }
   };
 
@@ -561,15 +578,25 @@ const NeoAdminDashboard = () => {
                     {selectedEvent.owner?.phone && <> · <span>{selectedEvent.owner.phone}</span></>}
                   </div>
                 </div>
-                {/* Trigger AI button */}
-                <button
-                  onClick={triggerAI}
-                  disabled={triggeringAI}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '1rem 2rem', borderRadius: '14px', background: 'linear-gradient(135deg, #FFB173, #FF6B35)', color: '#080C14', fontWeight: 900, fontSize: '0.95rem', border: 'none', cursor: triggeringAI ? 'not-allowed' : 'pointer', opacity: triggeringAI ? 0.7 : 1 }}
-                >
-                  {triggeringAI ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} />}
-                  Trigger AI Processing
-                </button>
+                {/* AI and Notify buttons */}
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={triggerAI}
+                    disabled={triggeringAI}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '1rem 2rem', borderRadius: '14px', background: 'linear-gradient(135deg, #FFB173, #FF6B35)', color: '#080C14', fontWeight: 900, fontSize: '0.95rem', border: 'none', cursor: triggeringAI ? 'not-allowed' : 'pointer', opacity: triggeringAI ? 0.7 : 1 }}
+                  >
+                    {triggeringAI ? <Loader2 className="animate-spin" size={18} /> : <Play size={18} />}
+                    Trigger AI Processing
+                  </button>
+                  <button
+                    onClick={notifyAttendees}
+                    disabled={notifyingAttendees}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '1rem 2rem', borderRadius: '14px', background: selectedEvent?.attendees_notified_at ? 'rgba(34,197,94,0.1)' : 'var(--surface-highest)', color: selectedEvent?.attendees_notified_at ? '#22c55e' : 'var(--on-surface)', border: selectedEvent?.attendees_notified_at ? '1px solid #22c55e' : '1px solid var(--glass-border)', fontWeight: 900, fontSize: '0.95rem', cursor: notifyingAttendees ? 'not-allowed' : 'pointer', opacity: notifyingAttendees ? 0.7 : 1 }}
+                  >
+                    {notifyingAttendees ? <Loader2 className="animate-spin" size={18} /> : <Mail size={18} />}
+                    {selectedEvent?.attendees_notified_at ? `Notified: ${new Date(selectedEvent.attendees_notified_at).toLocaleDateString()}` : 'Notify Attendees'}
+                  </button>
+                </div>
               </div>
 
               {aiTriggerMsg && (

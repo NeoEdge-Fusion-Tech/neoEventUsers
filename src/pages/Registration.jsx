@@ -28,6 +28,7 @@ const Registration = () => {
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [regDetails, setRegDetails] = useState(null);
+  const [aiConsent, setAiConsent] = useState(false);
   
   // Tab: 'individual' or 'group'
   const [purchaseType, setPurchaseType] = useState('individual');
@@ -110,6 +111,7 @@ const Registration = () => {
     const form = new FormData();
     form.append('event', event.id);
     form.append('ticket_type', selectedTicket.id);
+    form.append('ai_consent', aiConsent ? 'true' : 'false');
 
     if (purchaseType === 'group') {
       form.append('group_name', groupName);
@@ -538,19 +540,31 @@ const Registration = () => {
               </div>
 
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginTop: '1rem' }}>
-                <input type="checkbox" required={!!referenceImage} style={{ marginTop: '0.4rem', width: '18px', height: '18px' }} />
-                <p style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', fontWeight: 600 }}>
+                <input 
+                  type="checkbox" 
+                  checked={aiConsent}
+                  onChange={(e) => setAiConsent(e.target.checked)}
+                  required={!!referenceImage} 
+                  style={{ marginTop: '0.4rem', width: '18px', height: '18px', cursor: 'pointer' }} 
+                />
+                <p style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', fontWeight: 600, cursor: 'pointer' }} onClick={() => setAiConsent(!aiConsent)}>
                   I authorize NeoEvent to process reference images to deliver AI event photos directly to my portfolio vault. {!!referenceImage && <span style={{ color: 'var(--primary)' }}>*</span>}
                 </p>
               </div>
             </>
           )}
           
-          {purchaseType === 'group' && groupMembers.some(m => m.reference_image) && (
+          {purchaseType === 'group' && (
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginTop: '1rem' }}>
-              <input type="checkbox" required={true} style={{ marginTop: '0.4rem', width: '18px', height: '18px' }} />
-              <p style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', fontWeight: 600 }}>
-                I authorize NeoEvent to process reference images to deliver AI event photos directly to our portfolio vaults. <span style={{ color: 'var(--primary)' }}>*</span>
+              <input 
+                type="checkbox" 
+                checked={aiConsent}
+                onChange={(e) => setAiConsent(e.target.checked)}
+                required={groupMembers.some(m => m.reference_image)} 
+                style={{ marginTop: '0.4rem', width: '18px', height: '18px', cursor: 'pointer' }} 
+              />
+              <p style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', fontWeight: 600, cursor: 'pointer' }} onClick={() => setAiConsent(!aiConsent)}>
+                I authorize NeoEvent to process reference images to deliver AI event photos directly to our portfolio vaults. {groupMembers.some(m => m.reference_image) && <span style={{ color: 'var(--primary)' }}>*</span>}
               </p>
             </div>
           )}
