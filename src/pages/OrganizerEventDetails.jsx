@@ -110,7 +110,7 @@ const OrganizerEventDetails = () => {
     setPromoCodesLoading(true);
     try {
       const res = await api.get(`/events/${eventId}/promo-codes/`);
-      setPromoCodes(res.data);
+      setPromoCodes(res.data.results || res.data || []);
     } catch (err) {
       console.error('Failed to load promo codes', err);
     } finally {
