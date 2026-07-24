@@ -1,17 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Calendar, MapPin, Ticket, Camera, Info, Loader2, ArrowLeft, Download, Image as ImageIcon, CreditCard } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Calendar, MapPin, Ticket, Camera, Info, Loader2, ArrowLeft, Download, Image as ImageIcon, CreditCard, Send, Star, CheckCircle, ExternalLink } from 'lucide-react';
 import api from '../api';
 import { formatDateRange } from '../utils/dateUtils';
 
 const EventConsole = () => {
   const { regId } = useParams();
+  const navigate = useNavigate();
   const [registration, setRegistration] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [galleryCategory, setGalleryCategory] = useState('personal');
   const [selectedPhotos, setSelectedPhotos] = useState(new Set());
+  
+  // Transfer state
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [transferEmail, setTransferEmail] = useState('');
+  const [transferName, setTransferName] = useState('');
+  const [transferring, setTransferring] = useState(false);
+
+  // Rating State
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [vendorRating, setVendorRating] = useState(5);
+  const [vendorReview, setVendorReview] = useState('');
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   useEffect(() => {
     const fetchConsoleData = async () => {
@@ -85,6 +99,43 @@ const EventConsole = () => {
     }
   };
 
+  const handleTransferTicket = async (e) => {
+    e.preventDefault();
+    if (!transferEmail) return;
+    setTransferring(true);
+    try {
+      await api.post(`/attendee/registrations/${regId}/transfer/`, {
+        new_email: transferEmail,
+        new_name: transferName
+      });
+      alert('Ticket transferred successfully.');
+      setTransferModalOpen(false);
+      window.location.href = '/tickets'; // redirect to tickets list since they no longer own it
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Failed to transfer ticket');
+    } finally {
+      setTransferring(false);
+    }
+  };
+
+  const handleRateVendor = async (e) => {
+    e.preventDefault();
+    if (!selectedVendor) return;
+    setSubmittingRating(true);
+    try {
+      await api.post(`/events/${registration.event_id}/vendors/${selectedVendor.vendor}/rate/`, {
+        rating: vendorRating,
+        review: vendorReview
+      });
+      alert('Thank you! Your rating has been submitted.');
+      setRatingModalOpen(false);
+    } catch (err) {
+      alert(err.response?.data?.non_field_errors?.[0] || err.response?.data?.detail || 'Failed to submit rating.');
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '10rem' }}><Loader2 className="animate-spin" size={48} color="var(--primary)" /></div>;
   if (!registration) return <div style={{ textAlign: 'center', padding: '10rem' }}>Registration details not found.</div>;
 
@@ -136,6 +187,7 @@ const EventConsole = () => {
           <TabButton id="ticket" label="My Ticket" icon={Ticket} />
           <TabButton id="payment" label="Payment" icon={CreditCard} />
           <TabButton id="gallery" label="Photo Gallery" icon={Camera} />
+          <TabButton id="vendors" label="Vendors" icon={Star} />
         </div>
 
         <div style={{ padding: '1.5rem' }}>
@@ -201,6 +253,9 @@ const EventConsole = () => {
                   </div>
                   <button onClick={handleDownloadTicket} className="btn-primary" style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', fontSize: '0.85rem' }}>
                     <Download size={16} /> Download Passport
+                  </button>
+                  <button onClick={() => setTransferModalOpen(true)} style={{ width: '100%', marginTop: '0.8rem', padding: '0.8rem', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', fontSize: '0.85rem', background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', fontWeight: 'bold', cursor: 'pointer' }}>
+                    <Send size={16} /> Transfer Ticket
                   </button>
                 </div>
               </div>
@@ -363,8 +418,128 @@ const EventConsole = () => {
               )}
             </div>
           )}
+
+          {activeTab === 'vendors' && (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
+              <div className="glass" style={{ width: '100%', maxWidth: '800px', borderRadius: '24px', padding: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.35rem', marginBottom: '1.5rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                  <Star size={20} color="var(--primary)" /> Event Vendors
+                </h3>
+                {(!registration.event_vendors || registration.event_vendors.length === 0) ? (
+                  <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.95rem' }}>No vendors are listed for this event.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {registration.event_vendors.map((v, idx) => (
+                      <div key={idx} style={{ background: 'var(--surface-highest)', padding: '1.5rem', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+                        <div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.4rem', letterSpacing: '1px' }}>{v.role_display}</div>
+                          <h4 style={{ fontSize: '1.15rem', fontWeight: 900, marginBottom: '0.2rem' }}>{v.vendor_business_name || v.vendor_username}</h4>
+                          <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.85rem' }}>{v.vendor_email}</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+                          {v.vendor && (
+                            <button 
+                              onClick={() => navigate(`/vendor/profile/${v.vendor}`)}
+                              style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--on-surface)', padding: '0.6rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                            >
+                              <ExternalLink size={14} /> Profile
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => {
+                              setSelectedVendor(v);
+                              setVendorRating(5);
+                              setVendorReview('');
+                              setRatingModalOpen(true);
+                            }}
+                            className="btn-primary"
+                            style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                          >
+                            <Star size={14} fill="currentColor" /> Rate Vendor
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Rating Modal */}
+      {ratingModalOpen && selectedVendor && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1.5rem' }}>
+          <div className="glass" style={{ width: '100%', maxWidth: '450px', borderRadius: '24px', padding: '2rem' }}>
+            <h3 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '0.5rem' }}>Rate Vendor</h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--on-surface-variant)', marginBottom: '1.5rem' }}>
+              How was your experience with <strong>{selectedVendor.vendor_business_name || selectedVendor.vendor_username}</strong>?
+            </p>
+            <form onSubmit={handleRateVendor} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Rating</label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star 
+                      key={star}
+                      size={32} 
+                      color={star <= vendorRating ? "var(--primary)" : "var(--glass-border)"} 
+                      fill={star <= vendorRating ? "var(--primary)" : "none"}
+                      style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                      onClick={() => setVendorRating(star)}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Review (Optional)</label>
+                <textarea 
+                  rows={4}
+                  value={vendorReview} 
+                  onChange={e => setVendorReview(e.target.value)} 
+                  style={{ padding: '1rem', borderRadius: '12px', border: '1px solid var(--glass-border)', background: 'var(--surface)', color: 'var(--on-surface)', outline: 'none', resize: 'vertical' }} 
+                  placeholder="Share your experience..." 
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                <button type="button" onClick={() => setRatingModalOpen(false)} style={{ flex: 1, padding: '1rem', borderRadius: '12px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--on-surface)', fontWeight: 'bold', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={submittingRating} className="btn-primary" style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  {submittingRating ? <Loader2 size={20} className="animate-spin" /> : 'Submit Rating'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Modal */}
+      {transferModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1.5rem' }}>
+          <div className="glass" style={{ width: '100%', maxWidth: '400px', borderRadius: '24px', padding: '2rem' }}>
+            <h3 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '1.5rem' }}>Transfer Ticket</h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--on-surface-variant)', marginBottom: '1.5rem' }}>
+              Transferring this ticket will revoke your access to this event and assign it to the new user. This action cannot be undone.
+            </p>
+            <form onSubmit={handleTransferTicket} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Recipient Name</label>
+                <input required type="text" value={transferName} onChange={e => setTransferName(e.target.value)} style={{ padding: '1rem', borderRadius: '12px', border: '1px solid var(--glass-border)', background: 'var(--surface)', color: 'var(--on-surface)', outline: 'none' }} placeholder="e.g. John Doe" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Recipient Email</label>
+                <input required type="email" value={transferEmail} onChange={e => setTransferEmail(e.target.value)} style={{ padding: '1rem', borderRadius: '12px', border: '1px solid var(--glass-border)', background: 'var(--surface)', color: 'var(--on-surface)', outline: 'none' }} placeholder="e.g. john@example.com" />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setTransferModalOpen(false)} style={{ flex: 1, padding: '1rem', borderRadius: '12px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--on-surface)', fontWeight: 'bold', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={transferring} className="btn-primary" style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  {transferring ? <Loader2 size={20} className="animate-spin" /> : 'Transfer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

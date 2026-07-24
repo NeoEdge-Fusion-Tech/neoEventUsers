@@ -10,7 +10,7 @@ import { useAuth } from "../hooks/useAuth"; // Point to the hook file
 import './Navbar.css';
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, switchProfile } = useAuth();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -71,6 +71,33 @@ const Navbar = () => {
           <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase' }}>{user.role}</div>
         </div>
       </div>
+
+      {user.available_profiles && user.available_profiles.length > 1 && (
+        <div className="profile-switcher" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+          {user.available_profiles.map(role => (
+            role !== user.role && (
+              <button
+                key={role}
+                onClick={async () => {
+                  try {
+                    await switchProfile(role);
+                    window.location.href = '/'; // redirect to home to refresh views
+                  } catch (e) {
+                    console.error("Failed to switch profile", e);
+                  }
+                }}
+                style={{
+                  fontSize: '0.7rem', padding: '0.3rem 0.6rem', borderRadius: '6px',
+                  background: 'var(--surface-variant)', color: 'var(--on-surface)',
+                  border: '1px solid var(--outline)', cursor: 'pointer', fontWeight: 'bold'
+                }}
+              >
+                Switch to {role}
+              </button>
+            )
+          ))}
+        </div>
+      )}
 
       <button onClick={() => { closeMenu(); logout(); }} className="navbar-link" style={{ background: 'transparent', color: 'var(--on-surface-variant)', width: '100%' }}>
         <LogOut size={20} /> Log out

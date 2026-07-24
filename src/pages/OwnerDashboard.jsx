@@ -6,7 +6,7 @@ import { vendorService } from '../api/vendor';
 import { uploadEventBannerAssets } from '../utils/eventAssetUpload';
 import { 
   Loader2, Plus, Users, Trash2, Calendar, MapPin, Ticket, 
-  Image as ImageIcon, Video, Clock, Eye, ShieldCheck, Info, X 
+  Image as ImageIcon, Video, Clock, Eye, ShieldCheck, Info, X, Copy 
 } from 'lucide-react';
 
 const OwnerDashboard = () => {
@@ -50,6 +50,7 @@ const OwnerDashboard = () => {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState(null); // { id, title }
   const [deleting, setDeleting] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -99,6 +100,19 @@ const OwnerDashboard = () => {
       console.error(err);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleDuplicateEvent = async (eventId) => {
+    setDuplicating(true);
+    try {
+      await api.post(`/events/${eventId}/duplicate/`);
+      fetchEvents();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to duplicate event.');
+    } finally {
+      setDuplicating(false);
     }
   };
 
@@ -549,6 +563,24 @@ const OwnerDashboard = () => {
                 <Link to={`/organizer/event/${ev.id}`} className="btn-primary" style={{ ...styles.actionBtn, flex: 1, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                   <Eye size={18} /> Manage Event
                 </Link>
+                <button
+                  onClick={() => handleDuplicateEvent(ev.id)}
+                  disabled={duplicating}
+                  style={{
+                    ...styles.actionBtn,
+                    flex: 'none',
+                    padding: '12px 16px',
+                    background: 'rgba(255,177,115,0.08)',
+                    border: '1px solid rgba(255,177,115,0.3)',
+                    color: 'var(--primary)',
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    borderRadius: '12px', cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  title="Duplicate event"
+                >
+                  <Copy size={18} />
+                </button>
                 <button
                   onClick={() => setDeleteTarget({ id: ev.id, title: ev.title })}
                   style={{

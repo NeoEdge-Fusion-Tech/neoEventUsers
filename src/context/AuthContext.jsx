@@ -54,8 +54,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const switchProfile = async (role) => {
+    try {
+      const { data } = await API.post('account/switch-profile/', { role });
+      setUser(data.user);
+      if (data.access) {
+        sessionStorage.setItem('access_token', data.access);
+      }
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, logout, switchProfile }}>
       {!loading && children}
     </AuthContext.Provider>
   );

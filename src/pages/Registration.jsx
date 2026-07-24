@@ -29,6 +29,8 @@ const Registration = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [regDetails, setRegDetails] = useState(null);
   const [aiConsent, setAiConsent] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [answers, setAnswers] = useState({});
   
   // Tab: 'individual' or 'group'
   const [purchaseType, setPurchaseType] = useState('individual');
@@ -112,6 +114,9 @@ const Registration = () => {
     form.append('event', event.id);
     form.append('ticket_type', selectedTicket.id);
     form.append('ai_consent', aiConsent ? 'true' : 'false');
+    if (promoCode) {
+      form.append('promo_code', promoCode);
+    }
 
     if (purchaseType === 'group') {
       form.append('group_name', groupName);
@@ -136,6 +141,14 @@ const Registration = () => {
       if (referenceImage) {
         form.append('reference_image', referenceImage);
       }
+    }
+
+    const answersList = Object.entries(answers).map(([question_id, answer]) => ({
+      question_id,
+      answer
+    }));
+    if (answersList.length > 0) {
+      form.append('answers', JSON.stringify(answersList));
     }
 
     try {
@@ -314,6 +327,21 @@ const Registration = () => {
             {ticketTypes.length === 0 && (
               <p style={{ color: 'var(--on-surface-variant)', fontWeight: 600 }}>No tickets available for registration.</p>
             )}
+          </div>
+        </div>
+
+        {/* Promo Code Input */}
+        <div style={{ marginBottom: '2.5rem' }}>
+          <label style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.5rem', display: 'block' }}>Promo Code (Optional)</label>
+          <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0 1.2rem', borderRadius: '14px', maxWidth: '300px' }}>
+            <Ticket size={20} color="var(--primary)" />
+            <input 
+              type="text" 
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              placeholder="Enter promo code" 
+              style={{ background: 'transparent', border: 'none', padding: '1.1rem', color: 'var(--on-surface)', width: '100%', outline: 'none', fontWeight: 800, fontSize: '1rem', textTransform: 'uppercase' }} 
+            />
           </div>
         </div>
 
@@ -511,6 +539,70 @@ const Registration = () => {
                 ))}
               </div>
             </>
+          )}
+
+          {/* Custom Questions Section */}
+          {event?.custom_questions && event.custom_questions.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1rem', padding: '2rem', background: 'var(--surface-highest)', borderRadius: '24px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                <FileText size={20} color="var(--primary)" /> Additional Information
+              </h3>
+              {event.custom_questions.map(q => (
+                <div key={q.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                  <label style={styles.label}>
+                    {q.question_text} {q.is_required && <span style={{ color: 'var(--primary)' }}>*</span>}
+                  </label>
+                  {q.question_type === 'TEXT' && (
+                    <input
+                      type="text"
+                      required={q.is_required}
+                      value={answers[q.id] || ''}
+                      onChange={e => setAnswers({ ...answers, [q.id]: e.target.value })}
+                      style={{ ...styles.inputPlain, width: '100%' }}
+                    />
+                  )}
+                  {q.question_type === 'DROPDOWN' && (
+                    <select
+                      required={q.is_required}
+                      value={answers[q.id] || ''}
+                      onChange={e => setAnswers({ ...answers, [q.id]: e.target.value })}
+                      style={{ ...styles.inputPlain, width: '100%', appearance: 'auto' }}
+                    >
+                      <option value="">Select an option</option>
+                      {(q.options || []).map((opt, i) => (
+                        <option key={i} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  )}
+                  {q.question_type === 'CHECKBOX' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {(q.options || []).map((opt, i) => {
+                        const currentAnswers = answers[q.id] || [];
+                        return (
+                          <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--on-surface)' }}>
+                            <input
+                              type="checkbox"
+                              checked={currentAnswers.includes(opt)}
+                              onChange={(e) => {
+                                let newArr = [...currentAnswers];
+                                if (e.target.checked) newArr.push(opt);
+                                else newArr = newArr.filter(v => v !== opt);
+                                setAnswers({ ...answers, [q.id]: newArr });
+                              }}
+                              style={{ width: '18px', height: '18px' }}
+                            />
+                            {opt}
+                          </label>
+                        );
+                      })}
+                      {q.is_required && (!answers[q.id] || answers[q.id].length === 0) && (
+                        <input type="text" style={{ opacity: 0, height: 0, position: 'absolute' }} required />
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
 
           {/* Global Selfie Reference (Only for individual) */}

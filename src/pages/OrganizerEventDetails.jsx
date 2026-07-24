@@ -4,7 +4,7 @@ import {
   Camera, Mail, Plus, Loader2, ArrowLeft, CheckCircle, Clock,
   ShieldCheck, UserPlus, Info, Calendar, MapPin, Search, Ticket,
   DollarSign, Check, X, FileText, Group, User, Briefcase, Edit, Trash2, Save,
-  Image, Download, Filter
+  Image, Download, Filter, Tag, Send
 } from 'lucide-react';
 import api from '../api/axios';
 import { eventService } from '../api/event';
@@ -27,7 +27,15 @@ const OrganizerEventDetails = () => {
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [regsLoading, setRegsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('participants'); // 'participants' or 'vendors'
+  const [activeTab, setActiveTab] = useState('participants'); // 'participants', 'vendors', 'promo_codes', etc.
+
+  // Promo Codes State
+  const [promoCodes, setPromoCodes] = useState([]);
+  const [promoCodesLoading, setPromoCodesLoading] = useState(false);
+  const [promoForm, setPromoForm] = useState({
+    code: '', valid_until: '', max_uses: 1, discount_percentage: '', discount_amount: '', is_active: true
+  });
+  const [savingPromo, setSavingPromo] = useState(false);
 
   const [vendorTypes, setVendorTypes] = useState([]);
 
@@ -62,6 +70,9 @@ const OrganizerEventDetails = () => {
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
   const [triggeringAI, setTriggeringAI] = useState(false);
   const [notifyingAttendees, setNotifyingAttendees] = useState(false);
+  
+  // Vendor management
+  const [removingVendorId, setRemovingVendorId] = useState(null);
   const [actionMsg, setActionMsg] = useState('');
   
   // Direct Photo Upload state
@@ -71,9 +82,17 @@ const OrganizerEventDetails = () => {
   // Edit event state
   const [editForm, setEditForm] = useState(null);
   const [editTickets, setEditTickets] = useState([]);
+  const [editQuestions, setEditQuestions] = useState([]);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
   const [saveError, setSaveError] = useState('');
+
+  // Broadcast state
+  const [broadcasts, setBroadcasts] = useState([]);
+  const [broadcastForm, setBroadcastForm] = useState({ subject: '', message: '', recipient_type: 'ALL', channel: 'EMAIL' });
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [broadcastMsg, setBroadcastMsg] = useState('');
+
 
   useEffect(() => {
     fetchEventData();
@@ -83,7 +102,53 @@ const OrganizerEventDetails = () => {
 
   useEffect(() => {
     if (activeTab === 'gallery') fetchOwnerGallery(galleryPhotographer);
+    if (activeTab === 'promo_codes') fetchPromoCodes();
+    if (activeTab === 'broadcasts') fetchBroadcasts();
   }, [activeTab]);
+
+  const fetchPromoCodes = async () => {
+    setPromoCodesLoading(true);
+    try {
+      const res = await api.get(`/events/${eventId}/promo-codes/`);
+      setPromoCodes(res.data);
+    } catch (err) {
+      console.error('Failed to load promo codes', err);
+    } finally {
+      setPromoCodesLoading(false);
+    }
+  };
+
+  const handleCreatePromoCode = async (e) => {
+    e.preventDefault();
+    setSavingPromo(true);
+    try {
+      const payload = {
+        code: promoForm.code,
+        max_uses: promoForm.max_uses,
+        is_active: promoForm.is_active
+      };
+      if (promoForm.valid_until) payload.valid_until = promoForm.valid_until;
+      if (promoForm.discount_percentage) payload.discount_percentage = promoForm.discount_percentage;
+      if (promoForm.discount_amount) payload.discount_amount = promoForm.discount_amount;
+      
+      await api.post(`/events/${eventId}/promo-codes/`, payload);
+      setPromoForm({ code: '', valid_until: '', max_uses: 1, discount_percentage: '', discount_amount: '', is_active: true });
+      fetchPromoCodes();
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Failed to create promo code');
+    } finally {
+      setSavingPromo(false);
+    }
+  };
+
+  const togglePromoCode = async (id, isActive) => {
+    try {
+      await api.patch(`/promo-codes/${id}/`, { is_active: !isActive });
+      fetchPromoCodes();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchVendorTypes = async () => {
     try {
@@ -195,6 +260,7 @@ const OrganizerEventDetails = () => {
       currency: ev.currency || 'USD',
     });
     setEditTickets((ev.ticket_types || []).map(t => ({ ...t, _dirty: false })));
+    setEditQuestions((ev.custom_questions || []).map(q => ({ ...q, _dirty: false })));
   };
 
   const fetchEventData = async () => {
@@ -224,7 +290,34 @@ const OrganizerEventDetails = () => {
     }
   };
 
-  const handleInvite = async (e) => {
+  const fetchBroadcasts = async () => {
+    try {
+      const res = await api.get(`/events/${eventId}/broadcasts/`);
+      setBroadcasts(res.data.results || res.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSendBroadcast = async (e) => {
+    e.preventDefault();
+    if (!broadcastForm.subject || !broadcastForm.message) return;
+    setSendingBroadcast(true);
+    setBroadcastMsg('');
+    try {
+      await api.post(`/events/${eventId}/broadcasts/send/`, broadcastForm);
+      setBroadcastMsg('Broadcast message sent successfully!');
+      setBroadcastForm({ subject: '', message: '', recipient_type: 'ALL', channel: 'EMAIL' });
+      fetchBroadcasts();
+    } catch (err) {
+      console.error(err);
+      setBroadcastMsg('Failed to send broadcast.');
+    } finally {
+      setSendingBroadcast(false);
+    }
+  };
+
+  const handleVendorAction = async (vendorId, action) => {
     e.preventDefault();
     setInviting(true);
     setInvitationError('');
@@ -261,19 +354,38 @@ const OrganizerEventDetails = () => {
     }
   };
 
+  const handleRemoveVendor = async (assignmentId) => {
+    if (!window.confirm("Are you sure you want to remove this vendor from the event?")) return;
+    setRemovingVendorId(assignmentId);
+    try {
+      await api.delete(`/events/${eventId}/vendors/${assignmentId}/remove/`);
+      alert("Vendor removed successfully.");
+      fetchEventData();
+      setExpandedVendorId(null);
+    } catch (err) {
+      alert("Failed to remove vendor.");
+    } finally {
+      setRemovingVendorId(null);
+    }
+  };
+
   // Ticket editing helpers
-  const handleTicketChange = (idx, field, val) => {
-    const updated = [...editTickets];
-    updated[idx] = { ...updated[idx], [field]: val, _dirty: true };
-    setEditTickets(updated);
+  const addTicket = () => setEditTickets([...editTickets, { name: '', price: '0', quantity: 50, description: '', _dirty: true }]);
+  const removeTicket = (idx) => setEditTickets(editTickets.filter((_, i) => i !== idx));
+  const handleTicketChange = (idx, field, value) => {
+    const arr = [...editTickets];
+    arr[idx][field] = value;
+    arr[idx]._dirty = true;
+    setEditTickets(arr);
   };
 
-  const addTicket = () => {
-    setEditTickets([...editTickets, { id: null, name: '', description: '', price: '0.00', quantity: 50, _dirty: true, _new: true }]);
-  };
-
-  const removeTicket = (idx) => {
-    setEditTickets(editTickets.filter((_, i) => i !== idx));
+  const addQuestion = () => setEditQuestions([...editQuestions, { question_text: '', question_type: 'TEXT', is_required: false, options: [], order: editQuestions.length, _dirty: true }]);
+  const removeQuestion = (idx) => setEditQuestions(editQuestions.filter((_, i) => i !== idx));
+  const handleQuestionChange = (idx, field, value) => {
+    const arr = [...editQuestions];
+    arr[idx][field] = value;
+    arr[idx]._dirty = true;
+    setEditQuestions(arr);
   };
 
   const handleSaveEvent = async (e) => {
@@ -297,7 +409,10 @@ const OrganizerEventDetails = () => {
       });
       Object.assign(payload, bannerUrls);
 
-      payload.ticket_types = editTickets.map(({ _dirty, _new, ...t }) => t);
+      payload.currency = editForm.currency;
+      payload.ticket_types = JSON.stringify(editTickets);
+      payload.custom_questions = JSON.stringify(editQuestions);
+
       await api.patch(`/events/${eventId}/update/`, payload);
       setSaveMsg('Event updated successfully!');
       fetchEventData();
@@ -495,8 +610,10 @@ const OrganizerEventDetails = () => {
       <div className="scrollable-tabs-wrapper" style={{ ...styles.tabs }}>
         {[
           ['participants', `Participants (${registrations.length})`],
-          ['checked_in', `Checked In Attendee (${checkedInCount})`],
+          ['checked_in', `Checked In (${checkedInCount})`],
           ['vendors', `Vendors (${(event.vendors || []).length})`],
+          ['promo_codes', `Promo Codes`],
+          ['broadcasts', 'Broadcasts'],
           ['edit', 'Edit Event'],
           ['gallery', `Gallery (${galleryData.total})`]
         ].map(([tab, label]) => (
@@ -912,10 +1029,135 @@ const OrganizerEventDetails = () => {
                   </div>
                 </div>
 
+                {/* Custom Registration Questions */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <label style={{ ...styles.editLabel, fontSize: '1rem' }}>Custom Registration Questions</label>
+                    <button type="button" onClick={addQuestion} className="glass" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '8px 16px', borderRadius: '10px', fontWeight: 800, fontSize: '0.85rem', color: 'var(--primary)', border: '1px solid var(--primary)', cursor: 'pointer' }}>
+                      <Plus size={14} /> Add Question
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {editQuestions.map((q, idx) => (
+                      <div key={idx} className="glass" style={{ padding: '1.5rem', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                          <input placeholder="Question Text" value={q.question_text} onChange={e => handleQuestionChange(idx, 'question_text', e.target.value)} style={{ ...styles.editInput, flex: 3 }} />
+                          <select value={q.question_type} onChange={e => handleQuestionChange(idx, 'question_type', e.target.value)} style={{ ...styles.editInput, flex: 1 }}>
+                            <option value="TEXT">Text</option>
+                            <option value="DROPDOWN">Dropdown</option>
+                            <option value="CHECKBOX">Checkbox</option>
+                          </select>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 'none', color: 'var(--on-surface)', fontSize: '0.9rem' }}>
+                            <input type="checkbox" checked={q.is_required} onChange={e => handleQuestionChange(idx, 'is_required', e.target.checked)} />
+                            Required
+                          </label>
+                          <button type="button" onClick={() => removeQuestion(idx)} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px', padding: '8px', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
+                        </div>
+                        {(q.question_type === 'DROPDOWN' || q.question_type === 'CHECKBOX') && (
+                          <div style={{ paddingLeft: '1rem', borderLeft: '2px solid var(--glass-border)' }}>
+                            <input
+                              placeholder="Comma-separated options (e.g. Option A, Option B)"
+                              value={(q.options || []).join(', ')}
+                              onChange={e => handleQuestionChange(idx, 'options', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+                              style={styles.editInput}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {editQuestions.length === 0 && <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.9rem', textAlign: 'center', padding: '1rem' }}>No custom questions added.</p>}
+                  </div>
+                </div>
+
                 <button type="submit" disabled={saving} className="btn-primary" style={{ height: '56px', borderRadius: '14px', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.8rem', marginTop: '0.5rem' }}>
                   {saving ? <Loader2 className="animate-spin" size={20} /> : <><Save size={18} /> Save Changes</>}
                 </button>
               </form>
+            </div>
+          )}
+
+
+          {activeTab === 'promo_codes' && (
+            <div className="glass" style={{ padding: '3rem', borderRadius: '32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                  <Tag size={24} color="var(--primary)" /> Promo Codes
+                </h2>
+              </div>
+              
+              <div className="responsive-2col" style={{ gap: '3rem' }}>
+                {/* Promo Code Form */}
+                <div style={{ background: 'var(--surface-tint)', padding: '2rem', borderRadius: '24px' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '1.5rem' }}>Create New Promo Code</h3>
+                  <form onSubmit={handleCreatePromoCode} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                      <label style={styles.editLabel}>Promo Code Name (e.g. EARLYBIRD20)</label>
+                      <input required type="text" value={promoForm.code} onChange={e => setPromoForm({...promoForm, code: e.target.value})} style={styles.editInput} />
+                    </div>
+                    <div>
+                      <label style={styles.editLabel}>Max Uses</label>
+                      <input required type="number" value={promoForm.max_uses} onChange={e => setPromoForm({...promoForm, max_uses: e.target.value})} min="1" style={styles.editInput} />
+                    </div>
+                    <div className="responsive-2col" style={{ gap: '1rem' }}>
+                      <div>
+                        <label style={styles.editLabel}>Discount %</label>
+                        <input type="number" step="0.01" value={promoForm.discount_percentage} onChange={e => setPromoForm({...promoForm, discount_percentage: e.target.value, discount_amount: ''})} placeholder="e.g. 15.00" style={styles.editInput} />
+                      </div>
+                      <div>
+                        <label style={styles.editLabel}>Discount Amount (Flat)</label>
+                        <input type="number" step="0.01" value={promoForm.discount_amount} onChange={e => setPromoForm({...promoForm, discount_amount: e.target.value, discount_percentage: ''})} placeholder={`e.g. 100.00`} style={styles.editInput} />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={styles.editLabel}>Valid Until (Optional)</label>
+                      <input type="datetime-local" value={promoForm.valid_until} onChange={e => setPromoForm({...promoForm, valid_until: e.target.value})} style={styles.editInput} />
+                    </div>
+                    <button type="submit" disabled={savingPromo} className="btn-primary" style={{ padding: '1rem', borderRadius: '12px', fontWeight: 900, marginTop: '1rem' }}>
+                      {savingPromo ? <Loader2 className="animate-spin" size={18} /> : 'Create Promo Code'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Promo Codes List */}
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '1.5rem' }}>Active Promo Codes</h3>
+                  {promoCodesLoading ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}><Loader2 className="animate-spin" size={24} /></div>
+                  ) : promoCodes.length === 0 ? (
+                    <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.9rem' }}>No promo codes created yet.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {promoCodes.map(promo => (
+                        <div key={promo.id} className="glass" style={{ padding: '1.5rem', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--glass-border)' }}>
+                          <div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--primary)' }}>{promo.code}</div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--on-surface-variant)', marginTop: '0.2rem' }}>
+                              {promo.discount_percentage ? `${promo.discount_percentage}% OFF` : ''}
+                              {promo.discount_amount ? `${getCurrencySymbol(event?.currency)}${promo.discount_amount} OFF` : ''}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--on-surface)', marginTop: '0.5rem', fontWeight: 600 }}>
+                              Uses: {promo.current_uses} / {promo.max_uses}
+                            </div>
+                            {promo.valid_until && (
+                              <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>
+                                Expires: {new Date(promo.valid_until).toLocaleString()}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: promo.is_valid ? '#22c55e' : '#ef4444', background: promo.is_valid ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', padding: '0.3rem 0.6rem', borderRadius: '8px' }}>
+                              {promo.is_valid ? 'VALID' : 'INVALID/EXPIRED'}
+                            </span>
+                            <button onClick={() => togglePromoCode(promo.id, promo.is_active)} style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 800, textDecoration: 'underline' }}>
+                              {promo.is_active ? 'Deactivate' : 'Activate'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -1127,8 +1369,97 @@ const OrganizerEventDetails = () => {
                               {p.vendor_is_verified ? <><CheckCircle size={16} /> VERIFIED</> : <><X size={16} /> UNVERIFIED</>}
                             </div>
                           </div>
+                          
+                          <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                            <button 
+                              onClick={() => handleRemoveVendor(p.id)}
+                              disabled={removingVendorId === p.id}
+                              style={{ padding: '0.6rem 1.2rem', borderRadius: '10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontWeight: 800, fontSize: '0.85rem', cursor: removingVendorId === p.id ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                            >
+                              {removingVendorId === p.id ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
+                              Remove Vendor
+                            </button>
+                          </div>
                         </div>
                       )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'broadcasts' && (
+            <div className="glass" style={{ padding: '3rem', borderRadius: '32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                  <Send size={24} color="var(--primary)" /> Broadcasts
+                </h2>
+              </div>
+              
+              {broadcastMsg && (
+                <div style={{ padding: '1rem', borderRadius: '12px', background: broadcastMsg.includes('success') ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: broadcastMsg.includes('success') ? '#22c55e' : '#ef4444', fontWeight: 700, marginBottom: '2rem' }}>
+                  {broadcastMsg}
+                </div>
+              )}
+
+              <form onSubmit={handleSendBroadcast} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '3rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={styles.editLabel}>Subject</label>
+                  <input type="text" required value={broadcastForm.subject} onChange={e => setBroadcastForm({ ...broadcastForm, subject: e.target.value })} style={styles.editInput} placeholder="Message Subject" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={styles.editLabel}>Message</label>
+                  <textarea rows={5} required value={broadcastForm.message} onChange={e => setBroadcastForm({ ...broadcastForm, message: e.target.value })} style={{ ...styles.editInput, resize: 'vertical' }} placeholder="Type your broadcast message..." />
+                </div>
+                <div style={{ display: 'flex', gap: '1.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                    <label style={styles.editLabel}>Send To</label>
+                    <select value={broadcastForm.recipient_type} onChange={e => setBroadcastForm({ ...broadcastForm, recipient_type: e.target.value })} style={styles.editInput}>
+                      <option value="ALL">All Attendees</option>
+                      <option value="CONFIRMED">Confirmed Only</option>
+                      <option value="CHECKED_IN">Checked In Only</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+                    <label style={styles.editLabel}>Channel</label>
+                    <select value={broadcastForm.channel} onChange={e => setBroadcastForm({ ...broadcastForm, channel: e.target.value })} style={styles.editInput}>
+                      <option value="EMAIL">Email</option>
+                      <option value="SMS">SMS</option>
+                      <option value="WHATSAPP">WhatsApp</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" disabled={sendingBroadcast} className="btn-primary" style={{ height: '56px', borderRadius: '14px', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.8rem', marginTop: '0.5rem' }}>
+                  {sendingBroadcast ? <Loader2 className="animate-spin" size={20} /> : <><Send size={18} /> Send Broadcast</>}
+                </button>
+              </form>
+
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '1.5rem' }}>Past Broadcasts</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {broadcasts.length === 0 ? (
+                  <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.95rem', textAlign: 'center', padding: '2rem 0' }}>No past broadcasts.</p>
+                ) : (
+                  broadcasts.map(b => (
+                    <div key={b.id} className="glass" style={{ padding: '1.5rem', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>{b.subject}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', fontWeight: 600 }}>{new Date(b.sent_at).toLocaleString()}</div>
+                      </div>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--on-surface)', whiteSpace: 'pre-wrap', marginTop: '0.5rem' }}>{b.message}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', background: 'rgba(255,177,115,0.1)', padding: '0.3rem 0.6rem', borderRadius: '8px' }}>
+                            Target: {b.recipient_type.replace('_', ' ')}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--on-surface-variant)', background: 'var(--glass-border)', padding: '0.3rem 0.6rem', borderRadius: '8px' }}>
+                            Channel: {b.channel}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#22c55e', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <CheckCircle size={14} /> Sent to {b.sent_count} recipients
+                        </span>
+                      </div>
                     </div>
                   ))
                 )}
