@@ -153,7 +153,7 @@ const OrganizerEventDetails = () => {
   const fetchVendorTypes = async () => {
     try {
       const res = await vendorService.getVendorTypes();
-      setVendorTypes(res.data || []);
+      setVendorTypes(res.data.results || res.data || []);
     } catch (err) {
       console.error(err);
     }

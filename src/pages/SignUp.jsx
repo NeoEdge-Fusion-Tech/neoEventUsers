@@ -37,7 +37,7 @@ const Signup = () => {
       const fetchTypes = async () => {
         try {
           const res = await vendorService.getVendorTypes();
-          setVendorTypes(res.data || []);
+          setVendorTypes(res.data.results || res.data || []);
         } catch (err) {
           console.error("Failed to fetch vendor types", err);
         }
