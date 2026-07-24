@@ -317,7 +317,7 @@ const OrganizerEventDetails = () => {
     }
   };
 
-  const handleVendorAction = async (vendorId, action) => {
+  const handleInvite = async (e) => {
     e.preventDefault();
     setInviting(true);
     setInvitationError('');
